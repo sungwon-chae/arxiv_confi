@@ -1,0 +1,51 @@
+Q3 Trading Strategy Presentation
+
+Executive Summary:
+This presentation outlines Enron's trading strategy for the third quarter of 2000. The strategy focuses on maximizing trading profits while managing market risks across multiple commodity sectors.
+
+Key Strategic Objectives:
+1. Expand natural gas trading operations by 25%
+2. Diversify into electricity derivatives markets
+3. Optimize risk management through advanced modeling
+4. Develop new structured products for corporate clients
+
+Market Opportunities:
+- California electricity market deregulation creates arbitrage opportunities
+- Natural gas price volatility provides profitable trading windows
+- Weather derivatives market showing strong growth potential
+- International energy markets offer expansion possibilities
+
+Trading Volumes Target:
+- Natural Gas: $2.5 billion notional value
+- Electricity: $1.8 billion notional value
+- Oil Products: $900 million notional value
+- Weather Derivatives: $200 million notional value
+
+Risk Management Framework:
+- Value-at-Risk (VaR) limits set at $50 million daily
+- Position limits established for each commodity sector
+- Stress testing scenarios updated monthly
+- Real-time risk monitoring systems implemented
+
+Technology Infrastructure:
+- New trading platform deployment scheduled for September
+- Enhanced data analytics capabilities
+- Automated risk reporting systems
+- Integration with weather and market data feeds
+
+Competitive Advantages:
+- First-mover advantage in online energy trading
+- Superior risk management capabilities
+- Extensive network of counterparties
+- Innovative financial product development
+
+Financial Projections:
+- Expected trading revenues: $450 million for Q3
+- Target ROE: 35% for trading operations
+- Cost reduction target: 15% through automation
+- Market share growth target: 20% in gas trading
+
+This strategy positions Enron to capitalize on market volatility while maintaining disciplined risk management practices.
+
+Prepared by: Jeff Skilling, CEO
+Distribution: Trading Team, Risk Committee, Senior Management

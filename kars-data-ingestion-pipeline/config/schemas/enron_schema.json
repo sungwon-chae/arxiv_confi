@@ -1,0 +1,236 @@
+{
+  "class": "EnronDocument",
+  "vectorizer": "text2vec-openai",
+  "properties": [
+    {
+      "name": "control_number",
+      "dataType": [
+        "number"
+      ],
+      "description": "Control Number"
+    },
+    {
+      "name": "parent_document_id",
+      "dataType": [
+        "text"
+      ],
+      "description": "Parent Document ID"
+    },
+    {
+      "name": "custodian",
+      "dataType": [
+        "text"
+      ],
+      "description": "Custodian"
+    },
+    {
+      "name": "file_name",
+      "dataType": [
+        "text"
+      ],
+      "description": "File Name"
+    },
+    {
+      "name": "document_extension",
+      "dataType": [
+        "text"
+      ],
+      "description": "Document Extension"
+    },
+    {
+      "name": "sort_date",
+      "dataType": [
+        "date"
+      ],
+      "description": "Sort Date"
+    },
+    {
+      "name": "date_sent",
+      "dataType": [
+        "date"
+      ],
+      "description": "Date Sent"
+    },
+    {
+      "name": "email_subject",
+      "dataType": [
+        "text"
+      ],
+      "description": "Email Subject"
+    },
+    {
+      "name": "email_from",
+      "dataType": [
+        "text"
+      ],
+      "description": "Email From"
+    },
+    {
+      "name": "email_to",
+      "dataType": [
+        "text"
+      ],
+      "description": "Email To"
+    },
+    {
+      "name": "email_cc",
+      "dataType": [
+        "text"
+      ],
+      "description": "Email CC"
+    },
+    {
+      "name": "vp_docid",
+      "dataType": [
+        "text"
+      ],
+      "description": "VP DocID"
+    },
+    {
+      "name": "conversation_index",
+      "dataType": [
+        "text"
+      ],
+      "description": "Conversation Index"
+    },
+    {
+      "name": "extracted_text_size",
+      "dataType": [
+        "number"
+      ],
+      "description": "Extracted Text Size"
+    },
+    {
+      "name": "date_created",
+      "dataType": [
+        "date"
+      ],
+      "description": "Date Created"
+    },
+    {
+      "name": "date_last_modified",
+      "dataType": [
+        "date"
+      ],
+      "description": "Date Last Modified"
+    },
+    {
+      "name": "author",
+      "dataType": [
+        "text"
+      ],
+      "description": "Author"
+    },
+    {
+      "name": "file_type",
+      "dataType": [
+        "text"
+      ],
+      "description": "File Type"
+    },
+    {
+      "name": "file_size",
+      "dataType": [
+        "number"
+      ],
+      "description": "File Size"
+    },
+    {
+      "name": "md5_hash",
+      "dataType": [
+        "text"
+      ],
+      "description": "MD5 Hash"
+    },
+    {
+      "name": "text_precedence",
+      "dataType": [
+        "text"
+      ],
+      "description": "Text Precedence"
+    },
+    {
+      "name": "content",
+      "dataType": [
+        "text"
+      ],
+      "description": "Document Content"
+    }
+  ],
+  "moduleConfig": {
+    "text2vec-openai": {
+      "model": "/data/models_ckpt/bge-m3",
+      "type": "text",
+      "vectorizeClassName": false,
+      "vectorizePropertyName": false,
+      "properties": {
+        "control_number": {
+          "skip": true
+        },
+        "parent_document_id": {
+          "skip": true
+        },
+        "custodian": {
+          "skip": true
+        },
+        "file_name": {
+          "skip": true
+        },
+        "document_extension": {
+          "skip": true
+        },
+        "sort_date": {
+          "skip": true
+        },
+        "date_sent": {
+          "skip": true
+        },
+        "email_subject": {
+          "skip": true
+        },
+        "email_from": {
+          "skip": true
+        },
+        "email_to": {
+          "skip": true
+        },
+        "email_cc": {
+          "skip": true
+        },
+        "vp_docid": {
+          "skip": true
+        },
+        "conversation_index": {
+          "skip": true
+        },
+        "extracted_text_size": {
+          "skip": false
+        },
+        "date_created": {
+          "skip": true
+        },
+        "date_last_modified": {
+          "skip": true
+        },
+        "author": {
+          "skip": true
+        },
+        "file_type": {
+          "skip": true
+        },
+        "file_size": {
+          "skip": true
+        },
+        "md5_hash": {
+          "skip": true
+        },
+        "text_precedence": {
+          "skip": false
+        },
+        "content": {
+          "skip": false
+        }
+      }
+    }
+  }
+}

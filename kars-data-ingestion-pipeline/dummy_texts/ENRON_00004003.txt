@@ -1,0 +1,57 @@
+Subject: Re: European Power Trading - Financial Projections
+From: Michael Brown <michael.brown@enron.com>
+To: John Smith <john.smith@enron.com>, Sarah Johnson <sarah.johnson@enron.com>
+CC: Lisa Davis <lisa.davis@enron.com>
+Date: 2001-02-20 10:45:00
+
+John and Sarah,
+
+I've completed the financial analysis for our European power trading venture.
+
+Revenue Projections (5-year):
+Year 1: $45M (UK only)
+Year 2: $125M (UK + Germany pilot)
+Year 3: $280M (Full German market)
+Year 4: $450M (Add French opportunities)
+Year 5: $650M (Market leadership position)
+
+Cost Structure:
+Fixed Costs:
+- Office lease (London): $2M annually
+- Technology infrastructure: $15M upfront, $5M annual maintenance
+- Staff costs: $25M annually (50 professionals)
+- Regulatory compliance: $4M annually
+
+Variable Costs:
+- Transaction costs: 0.2% of traded volume
+- Risk management: $8M annually
+- Market data feeds: $3M annually
+- Professional services: $6M annually
+
+Profitability Analysis:
+- Gross margin target: 15%
+- EBITDA margin target: 35%
+- ROI target: 28%
+- Payback period: 3.2 years
+
+Capital Requirements:
+- Initial investment: $95M
+- Working capital: $150M
+- Credit facilities: $500M
+- Total funding need: $745M
+
+Risk Factors:
+- Market volatility: High
+- Regulatory changes: Medium
+- Competition: High
+- Currency exposure: Medium (EUR/GBP)
+
+Sensitivity Analysis:
+- 10% volume increase → 18% profit increase
+- 5% margin compression → 25% profit decrease
+- Regulatory delay (6 months) → 15% NPV reduction
+
+The venture shows strong financial potential with acceptable risk levels.
+
+Michael Brown
+European Finance Director

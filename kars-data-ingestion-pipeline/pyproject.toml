@@ -1,0 +1,74 @@
+[project]
+name = "data-ingestion-pipeline"
+version = "0.1.0"
+description = "고도화된 데이터 인제스션 파이프라인 - 멀티모달 문서 처리 및 지식 그래프 구축"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    # 기본 의존성
+    "aiofiles>=24.1.0",
+    "httpx>=0.28.1",
+    "loguru>=0.7.3",
+    "markitdown>=0.1.2",
+    "numpy>=2.2.6",
+    "openai>=1.98.0",
+    "openpyxl>=3.1.5",
+    "pandas>=2.3.1",
+    "pillow>=11.3.0",
+    "pyarrow>=21.0.0",
+    "pydantic>=2.11.7",
+    "pypdf>=5.9.0",
+    "python-docx>=1.2.0",
+    "python-dotenv>=1.1.1",
+    "tenacity>=9.1.2",
+    "tqdm>=4.67.1",
+    "weaviate-client>=4.16.4",
+    
+    # 고급 텍스트 처리
+    "fast-langdetect>=0.2.0",
+    
+    # 지식 그래프 구축
+    "spacy>=3.7.0",
+    "networkx>=3.2.1",
+    
+    # 멀티모달 문서 처리 (RAG-Anything)
+    "raganything[all]>=0.4.0"
+]
+
+[project.optional-dependencies]
+# 고성능 처리를 위한 선택적 의존성
+performance = [
+    "fasttext>=0.9.2",
+    "torch>=2.0.0",
+    "transformers>=4.30.0",
+]
+
+# spaCy 언어 모델 (별도 설치 필요)
+spacy-models = [
+    # 한국어: python -m spacy download ko_core_news_sm
+    # 영어: python -m spacy download en_core_web_sm
+]
+
+# GPU 지원
+gpu = [
+    "torch>=2.0.0",
+    "transformers[torch]>=4.30.0",
+]
+
+[project.scripts]
+data-pipeline = "main:main"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["."]
+
+[tool.ruff]
+line-length = 120
+target-version = "py310"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "N", "W", "UP"]
+ignore = ["E501", "F401"]

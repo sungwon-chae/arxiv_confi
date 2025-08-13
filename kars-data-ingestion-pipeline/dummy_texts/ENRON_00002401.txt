@@ -1,0 +1,25 @@
+Natural Gas Customers Analysis
+
+This document contains information about natural gas customers and their usage patterns. The data includes customer demographics, consumption patterns, and billing information.
+
+Key findings:
+- Customer base has grown by 15% this quarter
+- Average consumption per customer has increased by 8%
+- Industrial customers represent 60% of total revenue
+- Residential customers show seasonal variation in usage
+
+Customer Categories:
+1. Industrial customers - High volume, stable usage
+2. Commercial customers - Medium volume, business hours pattern
+3. Residential customers - Low volume, seasonal variation
+
+Market Analysis:
+The natural gas market shows strong growth potential with increasing demand from both industrial and residential sectors. Price stability and reliable supply chains are key factors for customer retention.
+
+Recommendations:
+- Focus on industrial customer retention programs
+- Develop seasonal pricing strategies for residential customers
+- Expand commercial customer base through targeted marketing
+- Invest in infrastructure to support growing demand
+
+This analysis was prepared by Phillip K Allen and the Gas Physical Group for strategic planning purposes.

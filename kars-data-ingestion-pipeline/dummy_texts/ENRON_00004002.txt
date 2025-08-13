@@ -1,0 +1,53 @@
+Subject: Re: European Power Trading - Regulatory Analysis
+From: Sarah Johnson <sarah.johnson@enron.com>
+To: John Smith <john.smith@enron.com>
+CC: Michael Brown <michael.brown@enron.com>, Lisa Davis <lisa.davis@enron.com>
+Date: 2001-02-15 14:30:00
+
+John,
+
+Thanks for the initial assessment. I've completed the regulatory analysis for our European expansion.
+
+UK Market:
+- Fully liberalized since 1990
+- OFGEM regulation (Office of Gas and Electricity Markets)
+- NETA trading system operational
+- License requirements: Generation, Supply, Trading
+- Foreign ownership: No restrictions
+
+German Market:
+- Partial liberalization in progress
+- Federal Network Agency oversight
+- EEX power exchange in Leipzig
+- Market access: Requires German subsidiary
+- Third-party access rules complex
+
+French Market:
+- State monopoly (EDF) being challenged
+- EU pressure for competition
+- RTE manages transmission
+- Limited market access for new entrants
+- Nuclear dominance (75% generation)
+
+Regulatory Risks:
+1. Changing regulations during transition
+2. State aid investigations by EU Commission
+3. Market manipulation penalties
+4. Cross-border trading restrictions
+
+Compliance Costs:
+- Legal fees: $2M annually per country
+- Regulatory filings: $500K annually
+- Compliance staff: $1.5M annually
+- System modifications: $3M one-time
+
+Recommendations:
+1. Start with UK market (lowest barriers)
+2. Establish EU legal entity in London
+3. Hire local regulatory experts
+4. Build government relations capabilities
+
+I'm scheduling meetings with regulatory consultants next week.
+
+Sarah Johnson
+European Legal Affairs

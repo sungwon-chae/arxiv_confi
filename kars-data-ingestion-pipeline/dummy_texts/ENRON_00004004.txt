@@ -1,0 +1,60 @@
+Subject: Re: European Power Trading - Technology Infrastructure
+From: Lisa Davis <lisa.davis@enron.com>
+To: John Smith <john.smith@enron.com>
+CC: Sarah Johnson <sarah.johnson@enron.com>, Michael Brown <michael.brown@enron.com>
+Date: 2001-02-25 16:20:00
+
+John,
+
+Here's the technology infrastructure assessment for European operations.
+
+Trading Platform Requirements:
+- Real-time market data from multiple exchanges
+- Multi-currency support (EUR, GBP, CHF)
+- Integration with existing Enron systems
+- Compliance reporting automation
+- Risk management dashboards
+
+System Architecture:
+- Primary data center: London
+- Backup facility: Houston
+- Network latency: <10ms to exchanges
+- Redundancy: 99.95% uptime target
+- Security: Multi-layer encryption
+
+Software Components:
+- Trading engine: Custom development ($8M)
+- Risk management: Algorithmics integration ($3M)
+- Settlement system: Modification of existing ($2M)
+- Regulatory reporting: New development ($1.5M)
+- Market data: Multiple vendor feeds ($2M annually)
+
+Hardware Requirements:
+- Trading floor setup: 50 workstations
+- Server infrastructure: $4M
+- Network equipment: $1M
+- UPS and cooling: $500K
+- Communication systems: $800K
+
+Integration Challenges:
+1. Time zone coordination with Houston
+2. European data protection regulations
+3. Market-specific messaging protocols
+4. Multiple language support requirements
+
+Implementation Timeline:
+- Phase 1 (Q1): Infrastructure setup
+- Phase 2 (Q2): Software development
+- Phase 3 (Q3): Testing and certification
+- Phase 4 (Q4): Production rollout
+
+Risk Mitigation:
+- Backup trading facility in Frankfurt
+- 24/7 technical support team
+- Disaster recovery procedures
+- Vendor diversification strategy
+
+The technology foundation will support aggressive growth plans.
+
+Lisa Davis
+European Technology Director
