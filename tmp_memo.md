@@ -49,22 +49,5 @@ Mon Sep  1 14:11:47 2025
 +-----------------------------------------------------------------------------------------+
 aiuser1@ai-smartlaw:/data/models$ 
 
-{
-    "remote.SSH.remotePlatform": {
-        "H100-server": "linux",
-        "kars-server": "linux",
-        "H100-1": "linux",
-        "LTT_data": "linux",
-        "H100-10": "linux"
-    },
-    "workbench.startupEditor": "none",
-    "terminal.integrated.defaultProfile.windows": "Git Bash",
-    "terminal.integrated.profiles.windows": {
-        "Git Bash": {
-            "path": "C:\\Program Files\\Git\\bin\\bash.exe",
-            "args": ["-l", "-i"],
-            "icon": "terminal-bash"
-        }
-    }
-}
+The terminal process failed to launch: Access was denied to the path containing your executable "C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe". Manage and change your permissions to get this to work.
 
