@@ -20,10 +20,43 @@ GPU 7: NVIDIA H200 (139.8 GB)
 🚀 ETU 실행 시작...
 📥 모델 로딩 중...
 Loading checkpoint shards: 100%|████████████████████████████████████████████| 8/8 [00:07<00:00,  1.08it/s]
-Loading checkpoint shards: 100%|███████████████████████████████████████████| 8/8 [00:00<00:00, 349.67it/s]
+Loading checkpoint shards: 100%|███████████████████████████████████████████| 8/8 [00:00<00:00, 362.92it/s]
 📊 데이터 로딩 중...
 🔍 Forget 데이터셋: cais/wmdp-corpora:cyber-forget-corpus
 🔍 Retain 데이터셋: cais/wmdp-corpora:bio-retain-corpus
+❌ 오류 발생: name 'arg' is not defined
+Traceback (most recent call last):
+  File "/data/aiuser3/ETU/run_etu_h200.py", line 261, in run_h200_optimized_etu
+    print(f"Layer 설정: layer_id={args.layer_id}, layer_ids={arg.layer_ids}")
+                                                             ^^^
+NameError: name 'arg' is not defined. Did you mean: 'args'?
+(LLM_EvalPipeline_test) aiuser3@ai-smartlaw:~/ETU$ python run_etu_h200.py --layer_id 7 --verbose
+=== ETU H200 GPU 최적화 실행 ===
+🚀 H200 GPU 환경 설정 중...
+GPU 0: NVIDIA H200 (139.8 GB)
+GPU 1: NVIDIA H200 (139.8 GB)
+GPU 2: NVIDIA H200 (139.8 GB)
+GPU 3: NVIDIA H200 (139.8 GB)
+GPU 4: NVIDIA H200 (139.8 GB)
+GPU 5: NVIDIA H200 (139.8 GB)
+GPU 6: NVIDIA H200 (139.8 GB)
+GPU 7: NVIDIA H200 (139.8 GB)
+✅ H200 GPU 8개 감지됨
+🎯 단일 GPU 모드: GPU 0
+🔧 H200 최적화 설정 적용:
+   - batch_size: 8
+   - frozen_on_cpu: False
+   - lora_r: 512
+   - lora_alpha: 1024
+   - max_num_batches: 100
+🚀 ETU 실행 시작...
+📥 모델 로딩 중...
+Loading checkpoint shards: 100%|████████████████████████████████████████████| 8/8 [00:06<00:00,  1.15it/s]
+Loading checkpoint shards: 100%|███████████████████████████████████████████| 8/8 [00:00<00:00, 372.57it/s]
+📊 데이터 로딩 중...
+🔍 Forget 데이터셋: cais/wmdp-corpora:cyber-forget-corpus
+🔍 Retain 데이터셋: cais/wmdp-corpora:bio-retain-corpus
+Layer 설정: layer_id=7, layer_ids=7
 ====ETU Config====
 gpu_id=0
 multi_gpu=False
@@ -46,7 +79,7 @@ num_epochs=1
 min_len=10
 max_len=512
 layer_id=7
-layer_ids=5,6,7
+layer_ids=7
 param_ids=
 name_keywords=q_proj,k_proj,v_proj,o_proj
 module_str={model_name}.model.layers[{layer_id}]
@@ -77,7 +110,7 @@ pref_max_len=512
 Applying LoRA for efficient parameter updates...
 ❌ 오류 발생: 'in <string>' requires string as left operand, not int
 Traceback (most recent call last):
-  File "/data/aiuser3/ETU/run_etu_h200.py", line 265, in run_h200_optimized_etu
+  File "/data/aiuser3/ETU/run_etu_h200.py", line 270, in run_h200_optimized_etu
     run_etu(
   File "/data/aiuser3/ETU/etu/unlearn.py", line 85, in run_etu
     updated_model = apply_lora_to_model(args, updated_model, args.layer_ids)
@@ -105,5 +138,4 @@ Traceback (most recent call last):
     target_module_found = layer_index in layer_indexes
                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 TypeError: 'in <string>' requires string as left operand, not int
-(LLM_EvalPipeline_test) aiuser3@ai-smartlaw:~/ETU$ ^C
-(LLM_EvalPipeline_test) aiuser3@ai-smartlaw:~/ETU$ ^C
+(LLM_EvalPipeline_test) aiuser3@ai-smartlaw:~/ETU$ 
