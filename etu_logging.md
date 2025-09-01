@@ -1,34 +1,4 @@
-cd ETU
-
-# 테스트 데이터 디렉토리 생성
-mkdir -p test_data
-
-# Forget 데이터 생성 (여러 문장으로)
-cat > test_data/forget.txt << 'EOF'
-This is a test sentence about cybersecurity that should be forgotten by the model. It contains sensitive information about network protocols and security vulnerabilities.
-The model needs to forget this knowledge about encryption algorithms and cryptographic methods. This includes AES, RSA, and other security protocols.
-This text contains information about malware detection and prevention techniques that must be unlearned by the language model.
-Network security concepts like firewalls, intrusion detection systems, and VPN configurations should be removed from the model's knowledge.
-EOF
-
-# Retain 데이터 생성 (여러 문장으로)
-cat > test_data/retain.txt << 'EOF'
-This is a test sentence about biology that should be retained by the model. It contains general knowledge about cell structure and function.
-The model should keep this information about DNA replication and protein synthesis processes in living organisms.
-This text discusses basic biological concepts like evolution, genetics, and cellular metabolism that are important to preserve.
-General knowledge about human anatomy, plant biology, and ecological systems should remain in the model's memory.
-EOF
-
-# 데이터 확인
-echo "=== Forget 데이터 ==="
-cat test_data/forget.txt
-echo -e "\n=== Retain 데이터 ==="
-cat test_data/retain.txt
-echo -e "\n=== 파일 크기 확인 ==="
-wc -c test_data/*.txt
-
-# 로컬 테스트 데이터로 ETU 실행
-python3 run_etu_h200.py \
+(LLM_EvalPipeline_test) aiuser3@ai-smartlaw:~/ETU$ python3 run_etu_h200.py \
   --forget_corpora "test_data/forget.txt" \
   --retain_corpora "test_data/retain.txt" \
   --batch_size 1 \
@@ -37,3 +7,109 @@ python3 run_etu_h200.py \
   --min_len 10 \
   --max_len 500 \
   --verbose
+=== ETU H200 GPU 최적화 실행 ===
+🚀 H200 GPU 환경 설정 중...
+GPU 0: NVIDIA H200 (139.8 GB)
+GPU 1: NVIDIA H200 (139.8 GB)
+GPU 2: NVIDIA H200 (139.8 GB)
+GPU 3: NVIDIA H200 (139.8 GB)
+GPU 4: NVIDIA H200 (139.8 GB)
+GPU 5: NVIDIA H200 (139.8 GB)
+GPU 6: NVIDIA H200 (139.8 GB)
+GPU 7: NVIDIA H200 (139.8 GB)
+✅ H200 GPU 8개 감지됨
+🎯 단일 GPU 모드: GPU 0
+🔧 H200 최적화 설정 적용:
+   - batch_size: 1
+   - frozen_on_cpu: False
+   - lora_r: 512
+   - lora_alpha: 1024
+   - max_num_batches: 3
+🚀 ETU 실행 시작...
+📥 모델 로딩 중...
+Loading checkpoint shards: 100%|███████████████████████████████| 8/8 [00:08<00:00,  1.10s/it]
+Loading checkpoint shards: 100%|██████████████████████████████| 8/8 [00:00<00:00, 381.50it/s]
+📊 데이터 로딩 중...
+🔍 Forget 데이터셋: test_data/forget.txt
+🔍 Retain 데이터셋: test_data/retain.txt
+====ETU Config====
+gpu_id=0
+multi_gpu=False
+batch_size=1
+max_num_batches=3
+frozen_on_cpu=False
+use_lora=True
+lora_r=512
+lora_alpha=1024
+epsilon=0.05
+lambda_max=12.0
+lambda_update_freq=25
+forget_corpora=test_data/forget.txt
+retain_corpora=test_data/retain.txt
+model_name_or_path=HuggingFaceH4/zephyr-7b-beta
+deterministic=False
+verbose=True
+lr=1e-05
+num_epochs=1
+min_len=10
+max_len=500
+layer_ids=7
+param_ids=
+name_keywords=
+module_str=
+use_pmi_vs=False
+vocab_top_k=1000
+vs_freq_rate=0.1
+vs_abs_cap=1000
+pmi_top_k=1000
+pmi_min_count=10
+pmi_smoothing=0.1
+pmi_max_batches=100
+vs_preview_k=10
+allow_negative_lambda=False
+lambda_eta=0.1
+wilson_max_n=1000
+log_every=10
+output_dir=
+seed=None
+retain_weight=0.0
+retain_broadcast=False
+preference_weight=0.0
+pref_every=10
+pref_format=dpo
+pref_beta=0.1
+pref_margin=0.1
+pref_max_len=512
+=====
+Applying LoRA for efficient parameter updates...
+❌ 오류 발생: 'in <string>' requires string as left operand, not int
+Traceback (most recent call last):
+  File "/data/aiuser3/ETU/run_etu_h200.py", line 263, in run_h200_optimized_etu
+    run_etu(
+  File "/data/aiuser3/ETU/etu/unlearn.py", line 85, in run_etu
+    updated_model = apply_lora_to_model(args, updated_model, args.layer_ids)
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/data/aiuser3/ETU/etu/utils.py", line 46, in apply_lora_to_model
+    model = get_peft_model(model, lora_config)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/data/aiuser3/LLM_EvalPipeline_test/.venv/lib/python3.12/site-packages/peft/mapping_func.py", line 125, in get_peft_model
+    return MODEL_TYPE_TO_PEFT_MODEL_MAPPING[peft_config.task_type](
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/data/aiuser3/LLM_EvalPipeline_test/.venv/lib/python3.12/site-packages/peft/peft_model.py", line 1815, in __init__
+    super().__init__(model, peft_config, adapter_name, **kwargs)
+  File "/data/aiuser3/LLM_EvalPipeline_test/.venv/lib/python3.12/site-packages/peft/peft_model.py", line 130, in __init__
+    self.base_model = cls(model, {adapter_name: peft_config}, adapter_name)
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/data/aiuser3/LLM_EvalPipeline_test/.venv/lib/python3.12/site-packages/peft/tuners/tuners_utils.py", line 209, in __init__
+    self.inject_adapter(self.model, adapter_name, low_cpu_mem_usage=low_cpu_mem_usage, state_dict=state_dict)
+  File "/data/aiuser3/LLM_EvalPipeline_test/.venv/lib/python3.12/site-packages/peft/tuners/tuners_utils.py", line 567, in inject_adapter
+    result = self._check_target_module_exists(peft_config, key)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/data/aiuser3/LLM_EvalPipeline_test/.venv/lib/python3.12/site-packages/peft/tuners/lora/model.py", line 159, in _check_target_module_exists
+    return check_target_module_exists(lora_config, key)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/data/aiuser3/LLM_EvalPipeline_test/.venv/lib/python3.12/site-packages/peft/tuners/tuners_utils.py", line 1255, in check_target_module_exists
+    target_module_found = layer_index in layer_indexes
+                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+TypeError: 'in <string>' requires string as left operand, not int
+(LLM_EvalPipeline_test) aiuser3@ai-smartlaw:~/ETU$ 
