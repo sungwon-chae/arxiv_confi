@@ -49,8 +49,31 @@ Mon Sep  1 14:11:47 2025
 +-----------------------------------------------------------------------------------------+
 aiuser1@ai-smartlaw:/data/models$ 
 
-# 주요 패키지들 확인
-python -c "
+
+(etu_env) aiuser1@ai-smartlaw:~/workspace/ETU$ deactivate
+aiuser1@ai-smartlaw:~/workspace/ETU$ source ~/my_env/bin/activate
+(my_env) aiuser1@ai-smartlaw:~/workspace/ETU$ python --version
+Python 3.11.13
+(my_env) aiuser1@ai-smartlaw:~/workspace/ETU$ pip list | head 10
+head: cannot open '10' for reading: No such file or directory
+ERROR: Pipe to stdout was broken
+Exception ignored in: <_io.TextIOWrapper name='<stdout>' mode='w' encoding='utf-8'>
+BrokenPipeError: [Errno 32] Broken pipe
+(my_env) aiuser1@ai-smartlaw:~/workspace/ETU$ pip list | head -10
+Package                                  Version
+---------------------------------------- -------------
+accelerate                               1.6.0
+aiohappyeyeballs                         2.6.1
+aiohttp                                  3.11.18
+aiosignal                                1.3.2
+airportsdata                             20250224
+annotated-types                          0.7.0
+anyio                                    4.9.0
+astor                                    0.8.1
+ERROR: Pipe to stdout was broken
+Exception ignored in: <_io.TextIOWrapper name='<stdout>' mode='w' encoding='utf-8'>
+BrokenPipeError: [Errno 32] Broken pipe
+(my_env) aiuser1@ai-smartlaw:~/workspace/ETU$ python -c "
 import sys
 print('=== my_env 환경 패키지 확인 ===')
 packages = ['torch', 'transformers', 'numpy', 'datasets', 'accelerate', 'peft']
@@ -62,9 +85,14 @@ for pkg in packages:
     except ImportError:
         print(f'❌ {pkg} 없음')
 "
-
-# CUDA 사용 가능한지 확인
-python -c "
+=== my_env 환경 패키지 확인 ===
+✅ torch 2.6.0+cu124
+✅ transformers 4.51.3
+✅ numpy 2.2.5
+❌ datasets 없음
+✅ accelerate 1.6.0
+❌ peft 없음
+(my_env) aiuser1@ai-smartlaw:~/workspace/ETU$ python -c "
 import torch
 print(f'✅ PyTorch {torch.__version__}')
 print(f'CUDA available: {torch.cuda.is_available()}')
@@ -73,10 +101,26 @@ if torch.cuda.is_available():
     for i in range(torch.cuda.device_count()):
         print(f'GPU {i}: {torch.cuda.get_device_name(i)}')
 "
-
-# ETU 모듈 import 테스트
-cd ~/workspace/ETU
+✅ PyTorch 2.6.0+cu124
+CUDA available: True
+GPU count: 8
+GPU 0: NVIDIA H200
+GPU 1: NVIDIA H200
+GPU 2: NVIDIA H200
+GPU 3: NVIDIA H200
+GPU 4: NVIDIA H200
+GPU 5: NVIDIA H200
+GPU 6: NVIDIA H200
+GPU 7: NVIDIA H200
+(my_env) aiuser1@ai-smartlaw:~/workspace/ETU$ cd ~/workspace/ETU
 python -c "
+from etu.unlearn import get_args
+from etu.utils import load_model
+print('✅ ETU 모듈 모두 정상 import됨')
+> 
+> ^C
+(my_env) aiuser1@ai-smartlaw:~/workspace/ETU$ cd ~/workspace/ETU
+(my_env) aiuser1@ai-smartlaw:~/workspace/ETU$ python -c "
 from etu.unlearn import get_args
 from etu.utils import load_model
 print('✅ ETU 모듈 모두 정상 import됨')
@@ -86,3 +130,11 @@ args = get_args()
 print(f'기본 epsilon: {args.epsilon}')
 print(f'기본 lambda_max: {args.lambda_max}')
 "
+Traceback (most recent call last):
+  File "<string>", line 2, in <module>
+  File "/data/aiuser1/workspace/ETU/etu/unlearn.py", line 14, in <module>
+    from etu.utils import (
+  File "/data/aiuser1/workspace/ETU/etu/utils.py", line 12, in <module>
+    from datasets import load_dataset
+ModuleNotFoundError: No module named 'datasets'
+(my_env) aiuser1@ai-smartlaw:~/workspace/ETU$ ^C
