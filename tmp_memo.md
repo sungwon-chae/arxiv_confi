@@ -49,13 +49,29 @@ Mon Sep  1 14:11:47 2025
 +-----------------------------------------------------------------------------------------+
 aiuser1@ai-smartlaw:/data/models$ 
 
-aiuser1@ai-smartlaw:/data/models$ ls
-EXAONE-3.5-32B-Instruct  gpt-oss-120b         openai_gpt-oss-20b  whisper-large-v3
-EXAONE-4.0-32B           gpt-oss-20b          Qwen3-32B           whisper-large-v3-turbo
-gemma-3-270m-it          openai_gpt-oss-120b  Qwen_Qwen3-32B      whisper-small
-aiuser1@ai-smartlaw:/data/models$ cd
-aiuser1@ai-smartlaw:~$ cd
-aiuser1@ai-smartlaw:~$ cd
-aiuser1@ai-smartlaw:~$ ls
-cache  my_env  my_env_py312  workspace
-aiuser1@ai-smartlaw:~$ 
+aiuser1@ai-smartlaw:~/workspace/ETU$ nvidia -smi
+WARNING:root:could not open file '/etc/apt/sources.list.d/sdcss.list': [Errno 13] Permission denied: '/etc/apt/sources.list.d/sdcss.list'
+
+nvidia: command not found
+aiuser1@ai-smartlaw:~/workspace/ETU$ pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu121
+error: externally-managed-environment
+
+× This environment is externally managed
+╰─> To install Python packages system-wide, try apt install
+    python3-xyz, where xyz is the package you are trying to
+    install.
+    
+    If you wish to install a non-Debian-packaged Python package,
+    create a virtual environment using python3 -m venv path/to/venv.
+    Then use path/to/venv/bin/python and path/to/venv/bin/pip. Make
+    sure you have python3-full installed.
+    
+    If you wish to install a non-Debian packaged Python application,
+    it may be easiest to use pipx install xyz, which will manage a
+    virtual environment for you. Make sure you have pipx installed.
+    
+    See /usr/share/doc/python3.12/README.venv for more information.
+
+note: If you believe this is a mistake, please contact your Python installation or OS distribution provider. You can override this, at the risk of breaking your Python installation or OS, by passing --break-system-packages.
+hint: See PEP 668 for the detailed specification.
+aiuser1@ai-smartlaw:~/workspace/ETU$ 
