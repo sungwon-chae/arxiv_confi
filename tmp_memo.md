@@ -48,3 +48,14 @@ Mon Sep  1 14:11:47 2025
 |  No running processes found                                                             |
 +-----------------------------------------------------------------------------------------+
 aiuser1@ai-smartlaw:/data/models$ 
+
+aiuser1@ai-smartlaw:/data/models$ ls
+EXAONE-3.5-32B-Instruct  gpt-oss-120b         openai_gpt-oss-20b  whisper-large-v3
+EXAONE-4.0-32B           gpt-oss-20b          Qwen3-32B           whisper-large-v3-turbo
+gemma-3-270m-it          openai_gpt-oss-120b  Qwen_Qwen3-32B      whisper-small
+aiuser1@ai-smartlaw:/data/models$ cd
+aiuser1@ai-smartlaw:~$ cd
+aiuser1@ai-smartlaw:~$ cd
+aiuser1@ai-smartlaw:~$ ls
+cache  my_env  my_env_py312  workspace
+aiuser1@ai-smartlaw:~$ 
