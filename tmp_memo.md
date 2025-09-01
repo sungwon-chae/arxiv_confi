@@ -57,6 +57,14 @@ aiuser1@ai-smartlaw:/data/models$
         "LTT_data": "linux",
         "H100-10": "linux"
     },
-    "workbench.startupEditor": "none"
+    "workbench.startupEditor": "none",
+    "terminal.integrated.defaultProfile.windows": "Git Bash",
+    "terminal.integrated.profiles.windows": {
+        "Git Bash": {
+            "path": "C:\\Program Files\\Git\\bin\\bash.exe",
+            "args": ["-l", "-i"],
+            "icon": "terminal-bash"
+        }
+    }
 }
 
