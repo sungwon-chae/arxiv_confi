@@ -50,91 +50,85 @@ Mon Sep  1 14:11:47 2025
 aiuser1@ai-smartlaw:/data/models$ 
 
 
-(etu_env) aiuser1@ai-smartlaw:~/workspace/ETU$ deactivate
-aiuser1@ai-smartlaw:~/workspace/ETU$ source ~/my_env/bin/activate
-(my_env) aiuser1@ai-smartlaw:~/workspace/ETU$ python --version
-Python 3.11.13
-(my_env) aiuser1@ai-smartlaw:~/workspace/ETU$ pip list | head 10
-head: cannot open '10' for reading: No such file or directory
-ERROR: Pipe to stdout was broken
-Exception ignored in: <_io.TextIOWrapper name='<stdout>' mode='w' encoding='utf-8'>
-BrokenPipeError: [Errno 32] Broken pipe
-(my_env) aiuser1@ai-smartlaw:~/workspace/ETU$ pip list | head -10
-Package                                  Version
----------------------------------------- -------------
-accelerate                               1.6.0
-aiohappyeyeballs                         2.6.1
-aiohttp                                  3.11.18
-aiosignal                                1.3.2
-airportsdata                             20250224
-annotated-types                          0.7.0
-anyio                                    4.9.0
-astor                                    0.8.1
-ERROR: Pipe to stdout was broken
-Exception ignored in: <_io.TextIOWrapper name='<stdout>' mode='w' encoding='utf-8'>
-BrokenPipeError: [Errno 32] Broken pipe
-(my_env) aiuser1@ai-smartlaw:~/workspace/ETU$ python -c "
-import sys
-print('=== my_env 환경 패키지 확인 ===')
-packages = ['torch', 'transformers', 'numpy', 'datasets', 'accelerate', 'peft']
-for pkg in packages:
-    try:
-        module = __import__(pkg)
-        version = getattr(module, '__version__', 'unknown')
-        print(f'✅ {pkg} {version}')
-    except ImportError:
-        print(f'❌ {pkg} 없음')
-"
-=== my_env 환경 패키지 확인 ===
-✅ torch 2.6.0+cu124
-✅ transformers 4.51.3
-✅ numpy 2.2.5
-❌ datasets 없음
-✅ accelerate 1.6.0
-❌ peft 없음
-(my_env) aiuser1@ai-smartlaw:~/workspace/ETU$ python -c "
-import torch
-print(f'✅ PyTorch {torch.__version__}')
-print(f'CUDA available: {torch.cuda.is_available()}')
-print(f'GPU count: {torch.cuda.device_count()}')
-if torch.cuda.is_available():
-    for i in range(torch.cuda.device_count()):
-        print(f'GPU {i}: {torch.cuda.get_device_name(i)}')
-"
-✅ PyTorch 2.6.0+cu124
-CUDA available: True
-GPU count: 8
-GPU 0: NVIDIA H200
-GPU 1: NVIDIA H200
-GPU 2: NVIDIA H200
-GPU 3: NVIDIA H200
-GPU 4: NVIDIA H200
-GPU 5: NVIDIA H200
-GPU 6: NVIDIA H200
-GPU 7: NVIDIA H200
-(my_env) aiuser1@ai-smartlaw:~/workspace/ETU$ cd ~/workspace/ETU
-python -c "
-from etu.unlearn import get_args
-from etu.utils import load_model
-print('✅ ETU 모듈 모두 정상 import됨')
-> 
-> ^C
-(my_env) aiuser1@ai-smartlaw:~/workspace/ETU$ cd ~/workspace/ETU
-(my_env) aiuser1@ai-smartlaw:~/workspace/ETU$ python -c "
-from etu.unlearn import get_args
-from etu.utils import load_model
-print('✅ ETU 모듈 모두 정상 import됨')
+(my_env) aiuser1@ai-smartlaw:~/workspace/ETU$ pip install datasets peft
+WARNING: Retrying (Retry(total=4, connect=None, read=None, redirect=None, status=None)) after connection broken by 'SSLError(SSLEOFError(8, '[SSL: UNEXPECTED_EOF_WHILE_READING] EOF occurred in violation of protocol (_ssl.c:1016)'))': /simple/datasets/
+WARNING: Retrying (Retry(total=3, connect=None, read=None, redirect=None, status=None)) after connection broken by 'SSLError(SSLEOFError(8, '[SSL: UNEXPECTED_EOF_WHILE_READING] EOF occurred in violation of protocol (_ssl.c:1016)'))': /simple/datasets/
+WARNING: Retrying (Retry(total=2, connect=None, read=None, redirect=None, status=None)) after connection broken by 'SSLError(SSLEOFError(8, '[SSL: UNEXPECTED_EOF_WHILE_READING] EOF occurred in violation of protocol (_ssl.c:1016)'))': /simple/datasets/
+WARNING: Retrying (Retry(total=1, connect=None, read=None, redirect=None, status=None)) after connection broken by 'SSLError(SSLEOFError(8, '[SSL: UNEXPECTED_EOF_WHILE_READING] EOF occurred in violation of protocol (_ssl.c:1016)'))': /simple/datasets/
+WARNING: Retrying (Retry(total=0, connect=None, read=None, redirect=None, status=None)) after connection broken by 'SSLError(SSLEOFError(8, '[SSL: UNEXPECTED_EOF_WHILE_READING] EOF occurred in violation of protocol (_ssl.c:1016)'))': /simple/datasets/
+Could not fetch URL https://pypi.org/simple/datasets/: There was a problem confirming the ssl certificate: HTTPSConnectionPool(host='pypi.org', port=443): Max retries exceeded with url: /simple/datasets/ (Caused by SSLError(SSLEOFError(8, '[SSL: UNEXPECTED_EOF_WHILE_READING] EOF occurred in violation of protocol (_ssl.c:1016)'))) - skipping
+ERROR: Could not find a version that satisfies the requirement datasets (from versions: none)
+Could not fetch URL https://pypi.org/simple/pip/: There was a problem confirming the ssl certificate: HTTPSConnectionPool(host='pypi.org', port=443): Max retries exceeded with url: /simple/pip/ (Caused by SSLError(SSLEOFError(8, '[SSL: UNEXPECTED_EOF_WHILE_READING] EOF occurred in violation of protocol (_ssl.c:1016)'))) - skipping
+ERROR: No matching distribution found for datasets
+(my_env) aiuser1@ai-smartlaw:~/workspace/ETU$ python benchmark_8gpu.py
+=== ETU 8대 H200 GPU 성능 벤치마크 ===
+🚀 8대 H200 GPU 벤치마크 시작
+============================================================
+GPU 0: NVIDIA H200 (139.8 GB)
+GPU 1: NVIDIA H200 (139.8 GB)
+GPU 2: NVIDIA H200 (139.8 GB)
+GPU 3: NVIDIA H200 (139.8 GB)
+GPU 4: NVIDIA H200 (139.8 GB)
+GPU 5: NVIDIA H200 (139.8 GB)
+GPU 6: NVIDIA H200 (139.8 GB)
+GPU 7: NVIDIA H200 (139.8 GB)
+💾 총 GPU 메모리: 1118.5 GB
+============================================================
+🚀 전체 벤치마크 시작...
 
-# 기본 인자 확인
-args = get_args()
-print(f'기본 epsilon: {args.epsilon}')
-print(f'기본 lambda_max: {args.lambda_max}')
-"
-Traceback (most recent call last):
-  File "<string>", line 2, in <module>
-  File "/data/aiuser1/workspace/ETU/etu/unlearn.py", line 14, in <module>
-    from etu.utils import (
-  File "/data/aiuser1/workspace/ETU/etu/utils.py", line 12, in <module>
-    from datasets import load_dataset
-ModuleNotFoundError: No module named 'datasets'
-(my_env) aiuser1@ai-smartlaw:~/workspace/ETU$ ^C
+📊 메모리 대역폭 벤치마크 시작...
+GPU 0 메모리 대역폭: 2154.76 GB/s
+GPU 1 메모리 대역폭: 2548.47 GB/s
+GPU 2 메모리 대역폭: 2547.81 GB/s
+GPU 3 메모리 대역폭: 2545.10 GB/s
+GPU 4 메모리 대역폭: 2549.66 GB/s
+GPU 5 메모리 대역폭: 2549.09 GB/s
+GPU 6 메모리 대역폭: 2550.14 GB/s
+GPU 7 메모리 대역폭: 2550.67 GB/s
+
+🔢 연산 성능 벤치마크 시작...
+GPU 0 연산 성능: 51164.32 GFLOPS
+GPU 1 연산 성능: 51261.41 GFLOPS
+GPU 2 연산 성능: 51312.34 GFLOPS
+GPU 3 연산 성능: 51287.32 GFLOPS
+GPU 4 연산 성능: 51307.18 GFLOPS
+GPU 5 연산 성능: 51306.95 GFLOPS
+GPU 6 연산 성능: 51319.28 GFLOPS
+GPU 7 연산 성능: 51302.34 GFLOPS
+
+🔄 멀티 GPU 스케일링 벤치마크 시작...
+  1대 GPU 테스트...
+    1대 GPU 효율성: 279.752
+  2대 GPU 테스트...
+    2대 GPU 효율성: 7.729
+  3대 GPU 테스트...
+    3대 GPU 효율성: 3.971
+  4대 GPU 테스트...
+    4대 GPU 효율성: 2.406
+  5대 GPU 테스트...
+    5대 GPU 효율성: 1.616
+  6대 GPU 테스트...
+    6대 GPU 효율성: 1.167
+  7대 GPU 테스트...
+    7대 GPU 효율성: 0.897
+  8대 GPU 테스트...
+    8대 GPU 효율성: 0.692
+
+💾 메모리 사용량 벤치마크 시작...
+GPU 0 최대 메모리: 18.39 GB
+GPU 1 최대 메모리: 18.39 GB
+GPU 2 최대 메모리: 18.39 GB
+GPU 3 최대 메모리: 18.39 GB
+GPU 4 최대 메모리: 18.39 GB
+GPU 5 최대 메모리: 18.39 GB
+GPU 6 최대 메모리: 18.39 GB
+GPU 7 최대 메모리: 18.39 GB
+
+============================================================
+📊 벤치마크 결과 요약
+============================================================
+평균 메모리 대역폭: 2499.46 GB/s
+평균 연산 성능: 51282.64 GFLOPS
+평균 멀티 GPU 효율성: 37.279
+============================================================
+📝 벤치마크 결과 저장됨: h200_benchmark_20250901_165154.json
