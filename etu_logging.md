@@ -19,40 +19,8 @@ GPU 7: NVIDIA H200 (139.8 GB)
    - max_num_batches: 100
 🚀 ETU 실행 시작...
 📥 모델 로딩 중...
-Loading checkpoint shards: 100%|████████████████████████████████████████████| 8/8 [00:07<00:00,  1.08it/s]
-Loading checkpoint shards: 100%|███████████████████████████████████████████| 8/8 [00:00<00:00, 362.92it/s]
-📊 데이터 로딩 중...
-🔍 Forget 데이터셋: cais/wmdp-corpora:cyber-forget-corpus
-🔍 Retain 데이터셋: cais/wmdp-corpora:bio-retain-corpus
-❌ 오류 발생: name 'arg' is not defined
-Traceback (most recent call last):
-  File "/data/aiuser3/ETU/run_etu_h200.py", line 261, in run_h200_optimized_etu
-    print(f"Layer 설정: layer_id={args.layer_id}, layer_ids={arg.layer_ids}")
-                                                             ^^^
-NameError: name 'arg' is not defined. Did you mean: 'args'?
-(LLM_EvalPipeline_test) aiuser3@ai-smartlaw:~/ETU$ python run_etu_h200.py --layer_id 7 --verbose
-=== ETU H200 GPU 최적화 실행 ===
-🚀 H200 GPU 환경 설정 중...
-GPU 0: NVIDIA H200 (139.8 GB)
-GPU 1: NVIDIA H200 (139.8 GB)
-GPU 2: NVIDIA H200 (139.8 GB)
-GPU 3: NVIDIA H200 (139.8 GB)
-GPU 4: NVIDIA H200 (139.8 GB)
-GPU 5: NVIDIA H200 (139.8 GB)
-GPU 6: NVIDIA H200 (139.8 GB)
-GPU 7: NVIDIA H200 (139.8 GB)
-✅ H200 GPU 8개 감지됨
-🎯 단일 GPU 모드: GPU 0
-🔧 H200 최적화 설정 적용:
-   - batch_size: 8
-   - frozen_on_cpu: False
-   - lora_r: 512
-   - lora_alpha: 1024
-   - max_num_batches: 100
-🚀 ETU 실행 시작...
-📥 모델 로딩 중...
-Loading checkpoint shards: 100%|████████████████████████████████████████████| 8/8 [00:06<00:00,  1.15it/s]
-Loading checkpoint shards: 100%|███████████████████████████████████████████| 8/8 [00:00<00:00, 372.57it/s]
+Loading checkpoint shards: 100%|████████████████████████████████████████████| 8/8 [00:07<00:00,  1.09it/s]
+Loading checkpoint shards: 100%|███████████████████████████████████████████| 8/8 [00:00<00:00, 375.76it/s]
 📊 데이터 로딩 중...
 🔍 Forget 데이터셋: cais/wmdp-corpora:cyber-forget-corpus
 🔍 Retain 데이터셋: cais/wmdp-corpora:bio-retain-corpus
@@ -108,34 +76,14 @@ pref_margin=0.1
 pref_max_len=512
 =====
 Applying LoRA for efficient parameter updates...
-❌ 오류 발생: 'in <string>' requires string as left operand, not int
+trainable params: 13,631,488 || all params: 7,255,363,584 || trainable%: 0.1879
+/data/aiuser3/ETU/etu/unlearn.py:99: FutureWarning: `torch.cuda.amp.GradScaler(args...)` is deprecated. Please use `torch.amp.GradScaler('cuda', args...)` instead.
+  scaler = torch.cuda.amp.GradScaler(enabled=(use_cuda and not use_bf16))
+❌ 오류 발생: No training batches. Check forget_corpora / filters / batch_size.
 Traceback (most recent call last):
   File "/data/aiuser3/ETU/run_etu_h200.py", line 270, in run_h200_optimized_etu
     run_etu(
-  File "/data/aiuser3/ETU/etu/unlearn.py", line 85, in run_etu
-    updated_model = apply_lora_to_model(args, updated_model, args.layer_ids)
-                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/data/aiuser3/ETU/etu/utils.py", line 46, in apply_lora_to_model
-    model = get_peft_model(model, lora_config)
-            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/data/aiuser3/LLM_EvalPipeline_test/.venv/lib/python3.12/site-packages/peft/mapping_func.py", line 125, in get_peft_model
-    return MODEL_TYPE_TO_PEFT_MODEL_MAPPING[peft_config.task_type](
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/data/aiuser3/LLM_EvalPipeline_test/.venv/lib/python3.12/site-packages/peft/peft_model.py", line 1815, in __init__
-    super().__init__(model, peft_config, adapter_name, **kwargs)
-  File "/data/aiuser3/LLM_EvalPipeline_test/.venv/lib/python3.12/site-packages/peft/peft_model.py", line 130, in __init__
-    self.base_model = cls(model, {adapter_name: peft_config}, adapter_name)
-                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/data/aiuser3/LLM_EvalPipeline_test/.venv/lib/python3.12/site-packages/peft/tuners/tuners_utils.py", line 209, in __init__
-    self.inject_adapter(self.model, adapter_name, low_cpu_mem_usage=low_cpu_mem_usage, state_dict=state_dict)
-  File "/data/aiuser3/LLM_EvalPipeline_test/.venv/lib/python3.12/site-packages/peft/tuners/tuners_utils.py", line 567, in inject_adapter
-    result = self._check_target_module_exists(peft_config, key)
-             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/data/aiuser3/LLM_EvalPipeline_test/.venv/lib/python3.12/site-packages/peft/tuners/lora/model.py", line 159, in _check_target_module_exists
-    return check_target_module_exists(lora_config, key)
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/data/aiuser3/LLM_EvalPipeline_test/.venv/lib/python3.12/site-packages/peft/tuners/tuners_utils.py", line 1255, in check_target_module_exists
-    target_module_found = layer_index in layer_indexes
-                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-TypeError: 'in <string>' requires string as left operand, not int
+  File "/data/aiuser3/ETU/etu/unlearn.py", line 108, in run_etu
+    raise RuntimeError("No training batches. Check forget_corpora / filters / batch_size.")
+RuntimeError: No training batches. Check forget_corpora / filters / batch_size.
 (LLM_EvalPipeline_test) aiuser3@ai-smartlaw:~/ETU$ 
