@@ -1,13 +1,4 @@
-(LLM_EvalPipeline_test) aiuser3@ai-smartlaw:~/ETU$ mkdir -p test_data
-(LLM_EvalPipeline_test) aiuser3@ai-smartlaw:~/ETU$ echo "forget this information" > test_data/forget.txt
-(LLM_EvalPipeline_test) aiuser3@ai-smartlaw:~/ETU$ echo "retain this knowledge" > test_data/retain.txt
-(LLM_EvalPipeline_test) aiuser3@ai-smartlaw:~/ETU$ python run_etu_h200.py \
-  --forget_corpora "test_data/forget.txt" \
-  --retain_corpora "test_data/retain.txt" \
-  --batch_size 1 \
-  --max_num_batches 5 \
-  --layer_id 7 \
-  --verbose
+(LLM_EvalPipeline_test) aiuser3@ai-smartlaw:~/ETU$ python run_etu_h200.py   --forget_corpora "test_data/forget.txt"   --retain_corpora "test_data/retain.txt"   --batch_size 1   --max_num_batches 5   --layer_id 7   --verbose
 === ETU H200 GPU 최적화 실행 ===
 🚀 H200 GPU 환경 설정 중...
 GPU 0: NVIDIA H200 (139.8 GB)
@@ -29,7 +20,7 @@ GPU 7: NVIDIA H200 (139.8 GB)
 🚀 ETU 실행 시작...
 📥 모델 로딩 중...
 Loading checkpoint shards: 100%|████████████████████████████████████████████| 8/8 [00:07<00:00,  1.08it/s]
-Loading checkpoint shards: 100%|███████████████████████████████████████████| 8/8 [00:00<00:00, 379.64it/s]
+Loading checkpoint shards: 100%|███████████████████████████████████████████| 8/8 [00:00<00:00, 369.51it/s]
 📊 데이터 로딩 중...
 🔍 Forget 데이터셋: test_data/forget.txt
 🔍 Retain 데이터셋: test_data/retain.txt
@@ -90,7 +81,7 @@ trainable params: 13,631,488 || all params: 7,255,363,584 || trainable%: 0.1879
   scaler = torch.cuda.amp.GradScaler(enabled=(use_cuda and not use_bf16))
 ❌ 오류 발생: No training batches. Check forget_corpora / filters / batch_size.
 Traceback (most recent call last):
-  File "/data/aiuser3/ETU/run_etu_h200.py", line 270, in run_h200_optimized_etu
+  File "/data/aiuser3/ETU/run_etu_h200.py", line 272, in run_h200_optimized_etu
     run_etu(
   File "/data/aiuser3/ETU/etu/unlearn.py", line 108, in run_etu
     raise RuntimeError("No training batches. Check forget_corpora / filters / batch_size.")
