@@ -1,4 +1,4 @@
-python -c "
+(LLM_EvalPipeline_test) aiuser3@ai-smartlaw:~/ETU$ python -c "
 import sys
 sys.path.append('.')
 from etu.utils import get_data
@@ -18,3 +18,6 @@ except Exception as e:
     import traceback
     traceback.print_exc()
 "
+Forget batches: 1
+Retain batches: 1
+(LLM_EvalPipeline_test) aiuser3@ai-smartlaw:~/ETU$ 
