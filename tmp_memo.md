@@ -49,29 +49,14 @@ Mon Sep  1 14:11:47 2025
 +-----------------------------------------------------------------------------------------+
 aiuser1@ai-smartlaw:/data/models$ 
 
-aiuser1@ai-smartlaw:~/workspace/ETU$ nvidia -smi
-WARNING:root:could not open file '/etc/apt/sources.list.d/sdcss.list': [Errno 13] Permission denied: '/etc/apt/sources.list.d/sdcss.list'
+aiuser1@ai-smartlaw:/data/models$ cd ~
+aiuser1@ai-smartlaw:~$ ps aux | grep apt
+root      710980  0.0  0.0  16904  7156 pts/18   S+   15:10   0:00 sudo apt install python3-full python3-venv
+root      711029  0.0  0.0  16904     0 pts/11   Ss   15:11   0:00 sudo apt install python3-full python3-venv
+root      711030  0.0  0.0  94364 84112 pts/11   S+   15:11   0:00 apt install python3-full python3-venv
+_apt      711126  0.0  0.0  22892  7696 pts/11   S+   15:11   0:00 /usr/lib/apt/methods/http
+aiuser1   726021  0.0  0.0   6544  1540 pts/10   S+   15:48   0:00 grep apt
+aiuser1@ai-smartlaw:~$ 
 
-nvidia: command not found
-aiuser1@ai-smartlaw:~/workspace/ETU$ pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu121
-error: externally-managed-environment
 
-× This environment is externally managed
-╰─> To install Python packages system-wide, try apt install
-    python3-xyz, where xyz is the package you are trying to
-    install.
-    
-    If you wish to install a non-Debian-packaged Python package,
-    create a virtual environment using python3 -m venv path/to/venv.
-    Then use path/to/venv/bin/python and path/to/venv/bin/pip. Make
-    sure you have python3-full installed.
-    
-    If you wish to install a non-Debian packaged Python application,
-    it may be easiest to use pipx install xyz, which will manage a
-    virtual environment for you. Make sure you have pipx installed.
-    
-    See /usr/share/doc/python3.12/README.venv for more information.
 
-note: If you believe this is a mistake, please contact your Python installation or OS distribution provider. You can override this, at the risk of breaking your Python installation or OS, by passing --break-system-packages.
-hint: See PEP 668 for the detailed specification.
-aiuser1@ai-smartlaw:~/workspace/ETU$ 
