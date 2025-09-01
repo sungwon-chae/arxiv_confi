@@ -1,316 +1,120 @@
-#!/usr/bin/env python3
-"""
-ETU H200 GPU 전용 실행 스크립트
-NVIDIA H200 143GB VRAM 환경에 최적화
-"""
-
-import os
-import sys
-import torch
-import argparse
-
-# H200 GPU 환경 최적화
-os.environ["TOKENIZERS_PARALLELISM"] = "false"
-os.environ["CUDA_LAUNCH_BLOCKING"] = "1"  # 디버깅용
-
-def setup_h200_environment():
-    """H200 GPU 환경 설정 및 검증"""
-    print("🚀 H200 GPU 환경 설정 중...")
-    
-    if not torch.cuda.is_available():
-        raise RuntimeError("CUDA GPU를 찾을 수 없습니다.")
-    
-    gpu_count = torch.cuda.device_count()
-    if gpu_count == 0:
-        raise RuntimeError("사용 가능한 GPU가 없습니다.")
-    
-    # GPU 정보 출력
-    for i in range(gpu_count):
-        props = torch.cuda.get_device_properties(i)
-        memory_gb = props.total_memory / 1024**3
-        print(f"GPU {i}: {props.name} ({memory_gb:.1f} GB)")
-    
-    # H200 GPU 확인
-    h200_gpus = []
-    for i in range(gpu_count):
-        if "H200" in torch.cuda.get_device_name(i):
-            h200_gpus.append(i)
-    
-    if not h200_gpus:
-        print("⚠️  H200 GPU를 찾을 수 없습니다. 일반 GPU 설정을 사용합니다.")
-        return False
-    
-    print(f"✅ H200 GPU {len(h200_gpus)}개 감지됨")
-    return True
-
-def get_dataset_mapping():
-    """데이터셋 별칭을 실제 HuggingFace 경로로 매핑"""
-    return {
-        "bio:forget": "cais/wmdp-bio-forget-corpus",
-        "bio:retain": "cais/wmdp-corpora:bio-retain-corpus", 
-        "cyber:forget": "cais/wmdp-corpora:cyber-forget-corpus",
-        "cyber:retain": "cais/wmdp-corpora:cyber-retain-corpus",
-        "wikitext": "wikitext",
-    }
-
-def resolve_dataset_paths(forget_corpora, retain_corpora):
-    """데이터셋 별칭을 실제 경로로 변환"""
-    mapping = get_dataset_mapping()
-    
-    def resolve_corpus(corpus):
-        if corpus in mapping:
-            return mapping[corpus]
-        return corpus
-    
-    # 단일 문자열인 경우 리스트로 변환
-    if isinstance(forget_corpora, str):
-        if "," in forget_corpora:
-            # 쉼표로 구분된 여러 데이터셋
-            forget_paths = [resolve_corpus(c.strip()) for c in forget_corpora.split(",")]
-        else:
-            # 단일 데이터셋
-            forget_paths = [resolve_corpus(forget_corpora.strip())]
-    else:
-        # 이미 리스트인 경우
-        forget_paths = [resolve_corpus(c.strip()) for c in forget_corpora]
-    
-    if isinstance(retain_corpora, str):
-        if "," in retain_corpora:
-            # 쉼표로 구분된 여러 데이터셋
-            retain_paths = [resolve_corpus(c.strip()) for c in retain_corpora.split(",")]
-        else:
-            # 단일 데이터셋
-            retain_paths = [resolve_corpus(retain_corpora.strip())]
-    else:
-        # 이미 리스트인 경우
-        retain_paths = [resolve_corpus(c.strip()) for c in retain_corpora]
-    
-    return forget_paths, retain_paths  # 리스트 반환
-
-def get_h200_optimized_args():
-    """H200 환경에 최적화된 기본 인자"""
-    parser = argparse.ArgumentParser(description="ETU H200 GPU 최적화 실행")
-    
-    # GPU 선택
-    parser.add_argument("--gpu_id", type=int, default=0, 
-                       help="사용할 GPU ID (기본값: 0)")
-    parser.add_argument("--multi_gpu", action="store_true",
-                       help="여러 GPU 사용 (병렬 처리)")
-    
-    # H200 최적화 설정
-    parser.add_argument("--batch_size", type=int, default=8,
-                       help="배치 크기 (H200 권장: 8)")
-    parser.add_argument("--max_num_batches", type=int, default=100,
-                       help="최대 배치 수 (H200 권장: 100)")
-    parser.add_argument("--frozen_on_cpu", action="store_true", default=False,
-                       help="frozen 모델을 CPU에 (H200에서는 false 권장)")
-    
-    # LoRA 최적화
-    parser.add_argument("--use_lora", action="store_true", default=True,
-                       help="LoRA 사용 (H200 권장: true)")
-    parser.add_argument("--lora_r", type=int, default=512,
-                       help="LoRA rank (H200 권장: 512)")
-    parser.add_argument("--lora_alpha", type=int, default=1024,
-                       help="LoRA alpha (H200 권장: 1024)")
-    
-    # ETU 핵심 파라미터
-    parser.add_argument("--epsilon", type=float, default=0.05,
-                       help="억제 목표 ε (기본값: 0.05)")
-    parser.add_argument("--lambda_max", type=float, default=12.0,
-                       help="최대 λ 값 (기본값: 12.0)")
-    parser.add_argument("--lambda_update_freq", type=int, default=25,
-                       help="λ 업데이트 빈도 (기본값: 25)")
-    
-    # 데이터 설정
-    parser.add_argument("--forget_corpora", type=str, 
-                       default="cais/wmdp-corpora:cyber-forget-corpus",
-                       help="forget할 도메인 (별칭: bio:forget, cyber:forget, 또는 실제 경로)")
-    parser.add_argument("--retain_corpora", type=str,
-                       default="cais/wmdp-corpora:bio-retain-corpus",
-                       help="retain할 도메인 (별칭: bio:retain, cyber:retain, wikitext, 또는 실제 경로)")
-    
-    # 모델 설정
-    parser.add_argument("--model_name_or_path", type=str,
-                       default="HuggingFaceH4/zephyr-7b-beta",
-                       help="사용할 모델")
-    
-    # 성능 최적화
-    parser.add_argument("--deterministic", action="store_true",
-                       help="결정적 실행 (성능 약간 하락)")
-    parser.add_argument("--verbose", action="store_true", default=True,
-                       help="상세 로깅")
-    
-    # 추가 ETU 인자들
-    parser.add_argument("--lr", type=float, default=1e-5,
-                       help="학습률 (기본값: 1e-5)")
-    parser.add_argument("--num_epochs", type=int, default=1,
-                       help="에포크 수 (기본값: 1)")
-    parser.add_argument("--min_len", type=int, default=10,
-                       help="최소 시퀀스 길이 (기본값: 10)")
-    parser.add_argument("--max_len", type=int, default=512,
-                       help="최대 시퀀스 길이 (기본값: 512)")
-    
-    # LoRA 관련 인자들
-    parser.add_argument("--layer_id", type=int, default=7,
-                       help="단일 레이어 ID (기본값: 7)")
-    parser.add_argument("--layer_ids", type=str, default="5,6,7",
-                       help="LoRA 적용할 레이어 ID (쉼표로 구분, 기본값: 5,6,7)")
-    parser.add_argument("--param_ids", type=str, default="",
-                       help="LoRA 적용할 파라미터 ID (쉼표로 구분)")
-    parser.add_argument("--name_keywords", type=str, default="q_proj,k_proj,v_proj,o_proj",
-                       help="LoRA 적용할 모듈 이름 키워드 (기본값: q_proj,k_proj,v_proj,o_proj)")
-    parser.add_argument("--module_str", type=str, default="{model_name}.model.layers[{layer_id}]",
-                       help="LoRA 적용할 모듈 문자열 (기본값: {model_name}.model.layers[{layer_id}])")
-    
-    # V_S 관련 인자들
-    parser.add_argument("--use_pmi_vs", action="store_true", default=False,
-                       help="PMI 기반 V_S 사용")
-    parser.add_argument("--vocab_top_k", type=int, default=1000,
-                       help="V_S에 포함할 상위 토큰 수 (기본값: 1000)")
-    parser.add_argument("--vs_freq_rate", type=float, default=0.1,
-                       help="V_S 빈도 비율 (기본값: 0.1)")
-    parser.add_argument("--vs_abs_cap", type=int, default=1000,
-                       help="V_S 절대 상한 (기본값: 1000)")
-    parser.add_argument("--pmi_top_k", type=int, default=1000,
-                       help="PMI 상위 k 토큰 (기본값: 1000)")
-    parser.add_argument("--pmi_min_count", type=int, default=10,
-                       help="PMI 최소 카운트 (기본값: 10)")
-    parser.add_argument("--pmi_smoothing", type=float, default=0.1,
-                       help="PMI 스무딩 (기본값: 0.1)")
-    parser.add_argument("--pmi_max_batches", type=int, default=100,
-                       help="PMI 최대 배치 수 (기본값: 100)")
-    parser.add_argument("--vs_preview_k", type=int, default=10,
-                       help="V_S 미리보기 토큰 수 (기본값: 10)")
-    
-    # Lambda 관련 인자들
-    parser.add_argument("--allow_negative_lambda", action="store_true", default=False,
-                       help="음수 lambda 허용")
-    parser.add_argument("--lambda_eta", type=float, default=0.1,
-                       help="Lambda 학습률 (기본값: 0.1)")
-    
-    # Wilson 관련 인자들
-    parser.add_argument("--wilson_max_n", type=int, default=1000,
-                       help="Wilson 최대 n (기본값: 1000)")
-    
-    # 로깅 관련 인자들
-    parser.add_argument("--log_every", type=int, default=10,
-                       help="로그 출력 빈도 (기본값: 10)")
-    
-    # 출력 관련 인자들
-    parser.add_argument("--output_dir", type=str, default="",
-                       help="출력 디렉토리")
-    
-    # 시드 설정
-    parser.add_argument("--seed", type=int, default=None,
-                       help="랜덤 시드")
-    
-    # Retain 관련 인자들
-    parser.add_argument("--retain_weight", type=float, default=0.0,
-                       help="Retain 가중치 (기본값: 0.0)")
-    parser.add_argument("--retain_broadcast", action="store_true", default=False,
-                       help="Retain 브로드캐스트")
-    
-    # Preference 관련 인자들
-    parser.add_argument("--preference_weight", type=float, default=0.0,
-                       help="Preference 가중치 (기본값: 0.0)")
-    parser.add_argument("--pref_every", type=int, default=10,
-                       help="Preference 업데이트 빈도 (기본값: 10)")
-    parser.add_argument("--pref_format", type=str, default="dpo",
-                       help="Preference 형식 (기본값: dpo)")
-    parser.add_argument("--pref_beta", type=float, default=0.1,
-                       help="Preference beta (기본값: 0.1)")
-    parser.add_argument("--pref_margin", type=float, default=0.1,
-                       help="Preference margin (기본값: 0.1)")
-    parser.add_argument("--pref_max_len", type=int, default=512,
-                       help="Preference 최대 길이 (기본값: 512)")
-    
-    return parser.parse_args()
-
-def run_h200_optimized_etu():
-    """H200 최적화된 ETU 실행"""
-    try:
-        # H200 환경 설정
-        is_h200 = setup_h200_environment()
-        
-        # 인자 파싱
-        args = get_h200_optimized_args()
-        
-        # GPU 설정
-        if args.multi_gpu:
-            gpu_ids = list(range(torch.cuda.device_count()))
-            os.environ["CUDA_VISIBLE_DEVICES"] = ",".join(map(str, gpu_ids))
-            print(f"🔄 멀티 GPU 모드: GPU {gpu_ids}")
-        else:
-            os.environ["CUDA_VISIBLE_DEVICES"] = str(args.gpu_id)
-            print(f"🎯 단일 GPU 모드: GPU {args.gpu_id}")
-        
-        # H200 최적화 설정 적용
-        if is_h200:
-            print("🔧 H200 최적화 설정 적용:")
-            print(f"   - batch_size: {args.batch_size}")
-            print(f"   - frozen_on_cpu: {args.frozen_on_cpu}")
-            print(f"   - lora_r: {args.lora_r}")
-            print(f"   - lora_alpha: {args.lora_alpha}")
-            print(f"   - max_num_batches: {args.max_num_batches}")
-        
-        # ETU 실행 - 올바른 방식으로 호출
-        from etu.unlearn import run_etu
-        from etu.utils import load_model, get_data
-        
-        print("🚀 ETU 실행 시작...")
-        
-        # 모델 로딩
-        print("📥 모델 로딩 중...")
-        frozen_model, tokenizer = load_model(args.model_name_or_path, train=False)
-        updated_model, tokenizer = load_model(args.model_name_or_path, train=True)
-        
-        # 데이터 로딩
-        print("📊 데이터 로딩 중...")
-        
-        # 데이터셋 별칭 해결
-        forget_paths, retain_paths = resolve_dataset_paths(
-            args.forget_corpora, args.retain_corpora
-        )
-        print(f"🔍 Forget 데이터셋: {forget_paths}")
-        print(f"🔍 Retain 데이터셋: {retain_paths}")
-        
-        # layer_ids를 layer_id와 동일하게 설정
-        if args.layer_id is not None:
-            args.layer_ids = str(args.layer_id)
-            print(f"🔧 Layer 설정: layer_id={args.layer_id}, layer_ids={args.layer_ids}")
-        
-        forget_data_list, retain_data_list = get_data(
-            forget_paths,
-            retain_paths,
-            min_len=args.min_len,
-            max_len=args.max_len,
-            batch_size=args.batch_size,
-        )
-        
-        # ETU 실행
-        run_etu(
-            updated_model,
-            frozen_model,
-            tokenizer,
-            forget_data_list,
-            retain_data_list,
-            args,
-        )
-        
-        print("✅ ETU 실행 완료!")
-        
-    except Exception as e:
-        print(f"❌ 오류 발생: {e}")
-        import traceback
-        traceback.print_exc()
-        sys.exit(1)
-
-def main():
-    """메인 함수"""
-    print("=== ETU H200 GPU 최적화 실행 ===")
-    
-    # H200 최적화된 ETU 실행
-    run_h200_optimized_etu()
-
-if __name__ == "__main__":
-    main() 
+(LLM_EvalPipeline_test) aiuser3@ai-smartlaw:~/ETU$ python3 run_etu_h200.py   --forget_corpora "test_data/forget.txt"   --retain_corpora "test_data/retain.txt"   --batch_size 1   --max_num_batches 3   --layer_id 7   --min_len 10   --max_len 500   --verbose
+=== ETU H200 GPU 최적화 실행 ===
+🚀 H200 GPU 환경 설정 중...
+GPU 0: NVIDIA H200 (139.8 GB)
+GPU 1: NVIDIA H200 (139.8 GB)
+GPU 2: NVIDIA H200 (139.8 GB)
+GPU 3: NVIDIA H200 (139.8 GB)
+GPU 4: NVIDIA H200 (139.8 GB)
+GPU 5: NVIDIA H200 (139.8 GB)
+GPU 6: NVIDIA H200 (139.8 GB)
+GPU 7: NVIDIA H200 (139.8 GB)
+✅ H200 GPU 8개 감지됨
+🎯 단일 GPU 모드: GPU 0
+🔧 H200 최적화 설정 적용:
+   - batch_size: 1
+   - frozen_on_cpu: False
+   - lora_r: 512
+   - lora_alpha: 1024
+   - max_num_batches: 3
+🚀 ETU 실행 시작...
+📥 모델 로딩 중...
+Loading checkpoint shards: 100%|███████████████████████████████| 8/8 [00:06<00:00,  1.23it/s]
+Loading checkpoint shards: 100%|██████████████████████████████| 8/8 [00:00<00:00, 373.79it/s]
+📊 데이터 로딩 중...
+🔍 Forget 데이터셋: ['test_data/forget.txt']
+🔍 Retain 데이터셋: ['test_data/retain.txt']
+🔧 Layer 설정: layer_id=7, layer_ids=7
+Processing corpus spec: 'test_data/forget.txt'
+Loading local file: test_data/forget.txt
+Loaded 36 items from local file
+Processing corpus spec: 'test_data/retain.txt'
+Loading local file: test_data/retain.txt
+Loaded 1 items from local file
+Data loading complete: 36 forget batches, 1 retain batches
+====ETU Config====
+gpu_id=0
+multi_gpu=False
+batch_size=1
+max_num_batches=3
+frozen_on_cpu=False
+use_lora=True
+lora_r=512
+lora_alpha=1024
+epsilon=0.05
+lambda_max=12.0
+lambda_update_freq=25
+forget_corpora=test_data/forget.txt
+retain_corpora=test_data/retain.txt
+model_name_or_path=HuggingFaceH4/zephyr-7b-beta
+deterministic=False
+verbose=True
+lr=1e-05
+num_epochs=1
+min_len=10
+max_len=500
+layer_id=7
+layer_ids=7
+param_ids=
+name_keywords=q_proj,k_proj,v_proj,o_proj
+module_str={model_name}.model.layers[{layer_id}]
+use_pmi_vs=False
+vocab_top_k=1000
+vs_freq_rate=0.1
+vs_abs_cap=1000
+pmi_top_k=1000
+pmi_min_count=10
+pmi_smoothing=0.1
+pmi_max_batches=100
+vs_preview_k=10
+allow_negative_lambda=False
+lambda_eta=0.1
+wilson_max_n=1000
+log_every=10
+output_dir=
+seed=None
+retain_weight=0.0
+retain_broadcast=False
+preference_weight=0.0
+pref_every=10
+pref_format=dpo
+pref_beta=0.1
+pref_margin=0.1
+pref_max_len=512
+=====
+Applying LoRA for efficient parameter updates...
+Applying LoRA to layers: [7]
+trainable params: 13,631,488 || all params: 7,255,363,584 || trainable%: 0.1879
+/data/aiuser3/ETU/etu/unlearn.py:99: FutureWarning: `torch.cuda.amp.GradScaler(args...)` is deprecated. Please use `torch.amp.GradScaler('cuda', args...)` instead.
+  scaler = torch.cuda.amp.GradScaler(enabled=(use_cuda and not use_bf16))
+Building forbidden token set V_S...
+V_S size: 68 tokens (0.2% of vocab)
+Estimating base probability mass p_S over V_S...
+Estimated p_S (π_base over V_S): 0.1416
+[info] |V_S|/V = 0.2%, π_base(S)=0.1416, ε=0.0500
+V_S preview: ['▁a', '▁the', 'ed', '▁to', '▁and', '▁A', '▁be', '▁is', '▁that', '▁R']
+Initial λ: 1.1423 → expected qλ(S)≈0.0500
+======= Epoch 0 =======
+  0%|                                                                  | 0/1 [00:00<?, ?it/s]/data/aiuser3/ETU/etu/unlearn.py:220: FutureWarning: `torch.cuda.amp.autocast(args...)` is deprecated. Please use `torch.amp.autocast('cuda', args...)` instead.
+  with torch.cuda.amp.autocast(enabled=use_amp,
+[HIGH] πθ(S)=0.1969 [95% normal 0.0000,0.5455 | Wilson↑ 0.6220] | E[qλ(S)]=0.0500 | ε=0.0500 | KL=0.2682 | λ=1.142
+100%|█████████████████████████| 1/1 [00:00<00:00,  2.45it/s, loss=0.268, πθ(S)=0.197, λ=1.14]
+=== ETU Suppression Report ===
+  - Perplexity on retain: 8.77
+=== Results ===
+  - π_base(S): 0.1416
+  - π_θ(S): 0.1414
+  - Suppression ratio: 1.00 (updated/base)
+  - Target ε: 0.0500
+  - Target achieved: ✗
+  - 95% upper π_base(S): 0.2087
+  - 95% upper π_θ(S): 0.2084
+  - Target achieved (95% upper): ✗
+Saved suppression report to models/zephyr-7b-beta_etu_epsilon-0.05_lambda-1.1423_2025-09-02-00-09-15/suppression_report.json
+Merging LoRA weights into base model...
+Saved V_S to models/zephyr-7b-beta_etu_epsilon-0.05_lambda-1.1423_2025-09-02-00-09-15/V_S.ids.json
+Saved ETU model to models/zephyr-7b-beta_etu_epsilon-0.05_lambda-1.1423_2025-09-02-00-09-15
+Saved args to models/zephyr-7b-beta_etu_epsilon-0.05_lambda-1.1423_2025-09-02-00-09-15/args.json
+Saved metrics to models/zephyr-7b-beta_etu_epsilon-0.05_lambda-1.1423_2025-09-02-00-09-15/metrics.json
+✅ ETU 실행 완료!
+(LLM_EvalPipeline_test) aiuser3@ai-smartlaw:~/ETU$ 
