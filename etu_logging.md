@@ -1,6 +1,4 @@
-(LLM_EvalPipeline_test) aiuser3@ai-smartlaw:~$ source ~/LLM_EvalPipeline_test/.venv/bin/activate
-(LLM_EvalPipeline_test) aiuser3@ai-smartlaw:~$ cd ETU
-(LLM_EvalPipeline_test) aiuser3@ai-smartlaw:~/ETU$ python run_etu_h200.py --verbose
+(LLM_EvalPipeline_test) aiuser3@ai-smartlaw:~/ETU$ python run_etu_h200.py --layer_id 7 --verbose
 === ETU H200 GPU 최적화 실행 ===
 🚀 H200 GPU 환경 설정 중...
 GPU 0: NVIDIA H200 (139.8 GB)
@@ -21,8 +19,8 @@ GPU 7: NVIDIA H200 (139.8 GB)
    - max_num_batches: 100
 🚀 ETU 실행 시작...
 📥 모델 로딩 중...
-Loading checkpoint shards: 100%|████████████████████████████████████████████| 8/8 [00:07<00:00,  1.07it/s]
-Loading checkpoint shards: 100%|███████████████████████████████████████████| 8/8 [00:00<00:00, 380.79it/s]
+Loading checkpoint shards: 100%|████████████████████████████████████████████| 8/8 [00:07<00:00,  1.08it/s]
+Loading checkpoint shards: 100%|███████████████████████████████████████████| 8/8 [00:00<00:00, 349.67it/s]
 📊 데이터 로딩 중...
 🔍 Forget 데이터셋: cais/wmdp-corpora:cyber-forget-corpus
 🔍 Retain 데이터셋: cais/wmdp-corpora:bio-retain-corpus
@@ -47,10 +45,11 @@ lr=1e-05
 num_epochs=1
 min_len=10
 max_len=512
-layer_ids=
+layer_id=7
+layer_ids=5,6,7
 param_ids=
-name_keywords=
-module_str=
+name_keywords=q_proj,k_proj,v_proj,o_proj
+module_str={model_name}.model.layers[{layer_id}]
 use_pmi_vs=False
 vocab_top_k=1000
 vs_freq_rate=0.1
@@ -78,7 +77,7 @@ pref_max_len=512
 Applying LoRA for efficient parameter updates...
 ❌ 오류 발생: 'in <string>' requires string as left operand, not int
 Traceback (most recent call last):
-  File "/data/aiuser3/ETU/run_etu_h200.py", line 263, in run_h200_optimized_etu
+  File "/data/aiuser3/ETU/run_etu_h200.py", line 265, in run_h200_optimized_etu
     run_etu(
   File "/data/aiuser3/ETU/etu/unlearn.py", line 85, in run_etu
     updated_model = apply_lora_to_model(args, updated_model, args.layer_ids)
@@ -106,4 +105,5 @@ Traceback (most recent call last):
     target_module_found = layer_index in layer_indexes
                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 TypeError: 'in <string>' requires string as left operand, not int
+(LLM_EvalPipeline_test) aiuser3@ai-smartlaw:~/ETU$ ^C
 (LLM_EvalPipeline_test) aiuser3@ai-smartlaw:~/ETU$ ^C
