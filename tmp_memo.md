@@ -49,14 +49,14 @@ Mon Sep  1 14:11:47 2025
 +-----------------------------------------------------------------------------------------+
 aiuser1@ai-smartlaw:/data/models$ 
 
-aiuser1@ai-smartlaw:/data/models$ cd ~
-aiuser1@ai-smartlaw:~$ ps aux | grep apt
-root      710980  0.0  0.0  16904  7156 pts/18   S+   15:10   0:00 sudo apt install python3-full python3-venv
-root      711029  0.0  0.0  16904     0 pts/11   Ss   15:11   0:00 sudo apt install python3-full python3-venv
-root      711030  0.0  0.0  94364 84112 pts/11   S+   15:11   0:00 apt install python3-full python3-venv
-_apt      711126  0.0  0.0  22892  7696 pts/11   S+   15:11   0:00 /usr/lib/apt/methods/http
-aiuser1   726021  0.0  0.0   6544  1540 pts/10   S+   15:48   0:00 grep apt
-aiuser1@ai-smartlaw:~$ 
-
-
+{
+    "remote.SSH.remotePlatform": {
+        "H100-server": "linux",
+        "kars-server": "linux",
+        "H100-1": "linux",
+        "LTT_data": "linux",
+        "H100-10": "linux"
+    },
+    "workbench.startupEditor": "none"
+}
 
