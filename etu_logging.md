@@ -1,4 +1,4 @@
-python -c "
+(LLM_EvalPipeline_test) aiuser3@ai-smartlaw:~/ETU$ python -c "
 import sys
 sys.path.append('.')
 from etu.utils import get_data
@@ -25,3 +25,9 @@ for i, batch in enumerate(retain_data):
         print(f'  First item length: {len(batch[0])}')
         print(f'  First item preview: {batch[0][:100]}...')
 "
+=== Forget Data ===
+Batch 0: 0 items
+
+=== Retain Data ===
+Batch 0: 0 items
+(LLM_EvalPipeline_test) aiuser3@ai-smartlaw:~/ETU$ 
