@@ -1,29 +1,39 @@
-(LLM_EvalPipeline_test) aiuser3@ai-smartlaw:~/ETU$ python -c "
-from datasets import load_dataset
+cd ETU
 
-try:
-    # WikiText로 테스트
-    ds = load_dataset('wikitext', 'wikitext-2-raw-v1', split='test')
-    print(f'✅ WikiText Success: {len(ds)} rows')
-except Exception as e:
-    print(f'❌ WikiText Error: {e}')
+# 테스트 데이터 디렉토리 생성
+mkdir -p test_data
 
-try:
-    # 다른 간단한 데이터셋으로 테스트
-    ds = load_dataset('squad', split='train')
-    print(f'✅ SQuAD Success: {len(ds)} rows')
-except Exception as e:
-    print(f'❌ SQuAD Error: {e}')
-"
-Downloading readme: 10.5kB [00:00, 35.4MB/s]
-HF google storage unreachable. Downloading and preparing it from source
-Downloading data: 100%|████████████████████████████████████████████████| 733k/733k [00:00<00:00, 1.38MB/s]
-Downloading data: 100%|██████████████████████████████████████████████| 6.36M/6.36M [00:00<00:00, 9.25MB/s]
-Downloading data: 100%|████████████████████████████████████████████████| 657k/657k [00:00<00:00, 1.48MB/s]
-❌ WikiText Error: Couldn't find file at https://huggingface.co/datasets/wikitext/resolve/b08601e04326c79dfdd32d625aee71d232d685c3/hf_cache/datasets/downloads/5e548f01091b2f01906ea7be35b8a1a6aa74842629dc550b7a02ca0821f1002d
-Downloading readme: 7.62kB [00:00, 16.7MB/s]
-HF google storage unreachable. Downloading and preparing it from source
-Downloading data: 100%|██████████████████████████████████████████████| 14.5M/14.5M [00:02<00:00, 7.21MB/s]
-Downloading data: 100%|██████████████████████████████████████████████| 1.82M/1.82M [00:00<00:00, 3.60MB/s]
-❌ SQuAD Error: Couldn't find file at https://huggingface.co/datasets/squad/resolve/7b6d24c440a36b6815f21b70d25016731768db1f/hf_cache/datasets/downloads/95dd33f3715bbca0674ef4784114a00fc369050253efd3ad7d22c0c9ced6a49f
-(LLM_EvalPipeline_test) aiuser3@ai-smartlaw:~/ETU$ 
+# Forget 데이터 생성 (여러 문장으로)
+cat > test_data/forget.txt << 'EOF'
+This is a test sentence about cybersecurity that should be forgotten by the model. It contains sensitive information about network protocols and security vulnerabilities.
+The model needs to forget this knowledge about encryption algorithms and cryptographic methods. This includes AES, RSA, and other security protocols.
+This text contains information about malware detection and prevention techniques that must be unlearned by the language model.
+Network security concepts like firewalls, intrusion detection systems, and VPN configurations should be removed from the model's knowledge.
+EOF
+
+# Retain 데이터 생성 (여러 문장으로)
+cat > test_data/retain.txt << 'EOF'
+This is a test sentence about biology that should be retained by the model. It contains general knowledge about cell structure and function.
+The model should keep this information about DNA replication and protein synthesis processes in living organisms.
+This text discusses basic biological concepts like evolution, genetics, and cellular metabolism that are important to preserve.
+General knowledge about human anatomy, plant biology, and ecological systems should remain in the model's memory.
+EOF
+
+# 데이터 확인
+echo "=== Forget 데이터 ==="
+cat test_data/forget.txt
+echo -e "\n=== Retain 데이터 ==="
+cat test_data/retain.txt
+echo -e "\n=== 파일 크기 확인 ==="
+wc -c test_data/*.txt
+
+# 로컬 테스트 데이터로 ETU 실행
+python3 run_etu_h200.py \
+  --forget_corpora "test_data/forget.txt" \
+  --retain_corpora "test_data/retain.txt" \
+  --batch_size 1 \
+  --max_num_batches 3 \
+  --layer_id 7 \
+  --min_len 10 \
+  --max_len 500 \
+  --verbose
