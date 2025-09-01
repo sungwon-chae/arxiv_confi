@@ -1,8 +1,8 @@
 (LLM_EvalPipeline_test) aiuser3@ai-smartlaw:~/ETU$ python run_etu_h200.py \
-  --forget_corpora "wikitext" \
-  --retain_corpora "wikitext" \
-  --batch_size 4 \
-  --max_num_batches 20 \
+  --forget_corpora "test_data/forget.txt" \
+  --retain_corpora "test_data/retain.txt" \
+  --batch_size 1 \
+  --max_num_batches 5 \
   --layer_id 7 \
   --verbose
 === ETU H200 GPU 최적화 실행 ===
@@ -18,111 +18,31 @@ GPU 7: NVIDIA H200 (139.8 GB)
 ✅ H200 GPU 8개 감지됨
 🎯 단일 GPU 모드: GPU 0
 🔧 H200 최적화 설정 적용:
-   - batch_size: 4
+   - batch_size: 1
    - frozen_on_cpu: False
    - lora_r: 512
    - lora_alpha: 1024
-   - max_num_batches: 20
+   - max_num_batches: 5
 🚀 ETU 실행 시작...
 📥 모델 로딩 중...
-Loading checkpoint shards: 100%|████████████████████████████████████████████| 8/8 [00:07<00:00,  1.08it/s]
-Loading checkpoint shards: 100%|███████████████████████████████████████████| 8/8 [00:00<00:00, 376.50it/s]
+Loading checkpoint shards: 100%|████████████████████████████████████████████| 8/8 [00:06<00:00,  1.16it/s]
+Loading checkpoint shards: 100%|███████████████████████████████████████████| 8/8 [00:00<00:00, 382.45it/s]
 📊 데이터 로딩 중...
-🔍 Forget 데이터셋: ['wikitext']
-🔍 Retain 데이터셋: ['wikitext']
+🔍 Forget 데이터셋: ['test_data/forget.txt']
+🔍 Retain 데이터셋: ['test_data/retain.txt']
 Layer 설정: layer_id=7, layer_ids=7
-Processing corpus spec: 'wikitext'
-Loading dataset: wikitext
-Downloading readme: 10.5kB [00:00, 12.4MB/s]
-HF google storage unreachable. Downloading and preparing it from source
-Downloading data: 100%|████████████████████████████████████████████████| 733k/733k [00:00<00:00, 1.46MB/s]
-Downloading data: 100%|██████████████████████████████████████████████| 6.36M/6.36M [00:00<00:00, 9.29MB/s]
-Downloading data: 100%|█████████████████████████████████████████████████| 657k/657k [00:01<00:00, 337kB/s]
-Error loading dataset wikitext: Couldn't find file at https://huggingface.co/datasets/wikitext/resolve/b08601e04326c79dfdd32d625aee71d232d685c3/./data_cache/downloads/5e548f01091b2f01906ea7be35b8a1a6aa74842629dc550b7a02ca0821f1002d
-Traceback (most recent call last):
-  File "/data/aiuser3/ETU/etu/utils.py", line 544, in get_dataset
-    raw_data = load_dataset("wikitext", "wikitext-2-raw-v1", cache_dir="./data_cache", split="test")
-               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/data/aiuser3/LLM_EvalPipeline_test/.venv/lib/python3.12/site-packages/datasets/load.py", line 2545, in load_dataset
-    builder_instance.download_and_prepare(
-  File "/data/aiuser3/LLM_EvalPipeline_test/.venv/lib/python3.12/site-packages/datasets/builder.py", line 1003, in download_and_prepare
-    self._download_and_prepare(
-  File "/data/aiuser3/LLM_EvalPipeline_test/.venv/lib/python3.12/site-packages/datasets/builder.py", line 1076, in _download_and_prepare
-    split_generators = self._split_generators(dl_manager, **split_generators_kwargs)
-                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/data/aiuser3/LLM_EvalPipeline_test/.venv/lib/python3.12/site-packages/datasets/packaged_modules/parquet/parquet.py", line 43, in _split_generators
-    data_files = dl_manager.download_and_extract(self.config.data_files)
-                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/data/aiuser3/LLM_EvalPipeline_test/.venv/lib/python3.12/site-packages/datasets/download/download_manager.py", line 566, in download_and_extract
-    return self.extract(self.download(url_or_urls))
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/data/aiuser3/LLM_EvalPipeline_test/.venv/lib/python3.12/site-packages/datasets/download/download_manager.py", line 539, in extract
-    extracted_paths = map_nested(
-                      ^^^^^^^^^^^
-  File "/data/aiuser3/LLM_EvalPipeline_test/.venv/lib/python3.12/site-packages/datasets/utils/py_utils.py", line 467, in map_nested
-    _single_map_nested((function, obj, types, None, True, None))
-  File "/data/aiuser3/LLM_EvalPipeline_test/.venv/lib/python3.12/site-packages/datasets/utils/py_utils.py", line 387, in _single_map_nested
-    mapped = [_single_map_nested((function, v, types, None, True, None)) for v in pbar]
-              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/data/aiuser3/LLM_EvalPipeline_test/.venv/lib/python3.12/site-packages/datasets/utils/py_utils.py", line 370, in _single_map_nested
-    return function(data_struct)
-           ^^^^^^^^^^^^^^^^^^^^^
-  File "/data/aiuser3/LLM_EvalPipeline_test/.venv/lib/python3.12/site-packages/datasets/download/download_manager.py", line 451, in _download
-    out = cached_path(url_or_filename, download_config=download_config)
-          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/data/aiuser3/LLM_EvalPipeline_test/.venv/lib/python3.12/site-packages/datasets/utils/file_utils.py", line 188, in cached_path
-    output_path = get_from_cache(
-                  ^^^^^^^^^^^^^^^
-  File "/data/aiuser3/LLM_EvalPipeline_test/.venv/lib/python3.12/site-packages/datasets/utils/file_utils.py", line 570, in get_from_cache
-    raise FileNotFoundError(f"Couldn't find file at {url}")
-FileNotFoundError: Couldn't find file at https://huggingface.co/datasets/wikitext/resolve/b08601e04326c79dfdd32d625aee71d232d685c3/./data_cache/downloads/5e548f01091b2f01906ea7be35b8a1a6aa74842629dc550b7a02ca0821f1002d
-Processing corpus spec: 'wikitext'
-Loading dataset: wikitext
-HF google storage unreachable. Downloading and preparing it from source
-Error loading dataset wikitext: Couldn't find file at https://huggingface.co/datasets/wikitext/resolve/b08601e04326c79dfdd32d625aee71d232d685c3/./data_cache/downloads/5e548f01091b2f01906ea7be35b8a1a6aa74842629dc550b7a02ca0821f1002d
-Traceback (most recent call last):
-  File "/data/aiuser3/ETU/etu/utils.py", line 544, in get_dataset
-    raw_data = load_dataset("wikitext", "wikitext-2-raw-v1", cache_dir="./data_cache", split="test")
-               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/data/aiuser3/LLM_EvalPipeline_test/.venv/lib/python3.12/site-packages/datasets/load.py", line 2545, in load_dataset
-    builder_instance.download_and_prepare(
-  File "/data/aiuser3/LLM_EvalPipeline_test/.venv/lib/python3.12/site-packages/datasets/builder.py", line 1003, in download_and_prepare
-    self._download_and_prepare(
-  File "/data/aiuser3/LLM_EvalPipeline_test/.venv/lib/python3.12/site-packages/datasets/builder.py", line 1076, in _download_and_prepare
-    split_generators = self._split_generators(dl_manager, **split_generators_kwargs)
-                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/data/aiuser3/LLM_EvalPipeline_test/.venv/lib/python3.12/site-packages/datasets/packaged_modules/parquet/parquet.py", line 43, in _split_generators
-    data_files = dl_manager.download_and_extract(self.config.data_files)
-                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/data/aiuser3/LLM_EvalPipeline_test/.venv/lib/python3.12/site-packages/datasets/download/download_manager.py", line 566, in download_and_extract
-    return self.extract(self.download(url_or_urls))
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/data/aiuser3/LLM_EvalPipeline_test/.venv/lib/python3.12/site-packages/datasets/download/download_manager.py", line 539, in extract
-    extracted_paths = map_nested(
-                      ^^^^^^^^^^^
-  File "/data/aiuser3/LLM_EvalPipeline_test/.venv/lib/python3.12/site-packages/datasets/utils/py_utils.py", line 467, in map_nested
-    _single_map_nested((function, obj, types, None, True, None))
-  File "/data/aiuser3/LLM_EvalPipeline_test/.venv/lib/python3.12/site-packages/datasets/utils/py_utils.py", line 387, in _single_map_nested
-    mapped = [_single_map_nested((function, v, types, None, True, None)) for v in pbar]
-              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/data/aiuser3/LLM_EvalPipeline_test/.venv/lib/python3.12/site-packages/datasets/utils/py_utils.py", line 370, in _single_map_nested
-    return function(data_struct)
-           ^^^^^^^^^^^^^^^^^^^^^
-  File "/data/aiuser3/LLM_EvalPipeline_test/.venv/lib/python3.12/site-packages/datasets/download/download_manager.py", line 451, in _download
-    out = cached_path(url_or_filename, download_config=download_config)
-          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/data/aiuser3/LLM_EvalPipeline_test/.venv/lib/python3.12/site-packages/datasets/utils/file_utils.py", line 188, in cached_path
-    output_path = get_from_cache(
-                  ^^^^^^^^^^^^^^^
-  File "/data/aiuser3/LLM_EvalPipeline_test/.venv/lib/python3.12/site-packages/datasets/utils/file_utils.py", line 570, in get_from_cache
-    raise FileNotFoundError(f"Couldn't find file at {url}")
-FileNotFoundError: Couldn't find file at https://huggingface.co/datasets/wikitext/resolve/b08601e04326c79dfdd32d625aee71d232d685c3/./data_cache/downloads/5e548f01091b2f01906ea7be35b8a1a6aa74842629dc550b7a02ca0821f1002d
+Processing corpus spec: 'test_data/forget.txt'
+Loading local file: test_data/forget.txt
+Unknown corpus spec: test_data/forget.txt
+Processing corpus spec: 'test_data/retain.txt'
+Loading local file: test_data/retain.txt
+Unknown corpus spec: test_data/retain.txt
 Final result: 0 forget batches, 0 retain batches
 ====ETU Config====
 gpu_id=0
 multi_gpu=False
-batch_size=4
-max_num_batches=20
+batch_size=1
+max_num_batches=5
 frozen_on_cpu=False
 use_lora=True
 lora_r=512
@@ -130,8 +50,8 @@ lora_alpha=1024
 epsilon=0.05
 lambda_max=12.0
 lambda_update_freq=25
-forget_corpora=wikitext
-retain_corpora=wikitext
+forget_corpora=test_data/forget.txt
+retain_corpora=test_data/retain.txt
 model_name_or_path=HuggingFaceH4/zephyr-7b-beta
 deterministic=False
 verbose=True
