@@ -1,89 +1,106 @@
-(LLM_EvalPipeline_test) aiuser3@ai-smartlaw:~/ETU$ python run_etu_h200.py   --forget_corpora "test_data/forget.txt"   --retain_corpora "test_data/retain.txt"   --batch_size 1   --max_num_batches 5   --layer_id 7   --verbose
-=== ETU H200 GPU 최적화 실행 ===
-🚀 H200 GPU 환경 설정 중...
-GPU 0: NVIDIA H200 (139.8 GB)
-GPU 1: NVIDIA H200 (139.8 GB)
-GPU 2: NVIDIA H200 (139.8 GB)
-GPU 3: NVIDIA H200 (139.8 GB)
-GPU 4: NVIDIA H200 (139.8 GB)
-GPU 5: NVIDIA H200 (139.8 GB)
-GPU 6: NVIDIA H200 (139.8 GB)
-GPU 7: NVIDIA H200 (139.8 GB)
-✅ H200 GPU 8개 감지됨
-🎯 단일 GPU 모드: GPU 0
-🔧 H200 최적화 설정 적용:
-   - batch_size: 1
-   - frozen_on_cpu: False
-   - lora_r: 512
-   - lora_alpha: 1024
-   - max_num_batches: 5
-🚀 ETU 실행 시작...
-📥 모델 로딩 중...
-Loading checkpoint shards: 100%|████████████████████████████████████████████| 8/8 [00:07<00:00,  1.08it/s]
-Loading checkpoint shards: 100%|███████████████████████████████████████████| 8/8 [00:00<00:00, 369.51it/s]
-📊 데이터 로딩 중...
-🔍 Forget 데이터셋: test_data/forget.txt
-🔍 Retain 데이터셋: test_data/retain.txt
-Layer 설정: layer_id=7, layer_ids=7
-====ETU Config====
-gpu_id=0
-multi_gpu=False
-batch_size=1
-max_num_batches=5
-frozen_on_cpu=False
-use_lora=True
-lora_r=512
-lora_alpha=1024
-epsilon=0.05
-lambda_max=12.0
-lambda_update_freq=25
-forget_corpora=test_data/forget.txt
-retain_corpora=test_data/retain.txt
-model_name_or_path=HuggingFaceH4/zephyr-7b-beta
-deterministic=False
-verbose=True
-lr=1e-05
-num_epochs=1
-min_len=10
-max_len=512
-layer_id=7
-layer_ids=7
-param_ids=
-name_keywords=q_proj,k_proj,v_proj,o_proj
-module_str={model_name}.model.layers[{layer_id}]
-use_pmi_vs=False
-vocab_top_k=1000
-vs_freq_rate=0.1
-vs_abs_cap=1000
-pmi_top_k=1000
-pmi_min_count=10
-pmi_smoothing=0.1
-pmi_max_batches=100
-vs_preview_k=10
-allow_negative_lambda=False
-lambda_eta=0.1
-wilson_max_n=1000
-log_every=10
-output_dir=
-seed=None
-retain_weight=0.0
-retain_broadcast=False
-preference_weight=0.0
-pref_every=10
-pref_format=dpo
-pref_beta=0.1
-pref_margin=0.1
-pref_max_len=512
-=====
-Applying LoRA for efficient parameter updates...
-trainable params: 13,631,488 || all params: 7,255,363,584 || trainable%: 0.1879
-/data/aiuser3/ETU/etu/unlearn.py:99: FutureWarning: `torch.cuda.amp.GradScaler(args...)` is deprecated. Please use `torch.amp.GradScaler('cuda', args...)` instead.
-  scaler = torch.cuda.amp.GradScaler(enabled=(use_cuda and not use_bf16))
-❌ 오류 발생: No training batches. Check forget_corpora / filters / batch_size.
-Traceback (most recent call last):
-  File "/data/aiuser3/ETU/run_etu_h200.py", line 272, in run_h200_optimized_etu
-    run_etu(
-  File "/data/aiuser3/ETU/etu/unlearn.py", line 108, in run_etu
-    raise RuntimeError("No training batches. Check forget_corpora / filters / batch_size.")
-RuntimeError: No training batches. Check forget_corpora / filters / batch_size.
-(LLM_EvalPipeline_test) aiuser3@ai-smartlaw:~/ETU$ 
+
+def get_data(forget_corpora, retain_corpora, min_len=50, max_len=2000, batch_size=4):
+    """
+    Flexible loader for WMDP + WikiText + local files:
+    - "bio:forget", "cyber:forget"
+    - "bio:retain", "cyber:retain"
+    - "wikitext"
+    - local file paths
+    """
+    from datasets import load_dataset
+    import os
+
+    def normalize_text(rec):
+        if 'text' in rec and isinstance(rec['text'], str):
+            return rec['text']
+        parts = []
+        for k in ['question', 'prompt', 'instruction']:
+            if k in rec and isinstance(rec[k], str):
+                parts.append(rec[k])
+        if 'choices' in rec and isinstance(rec['choices'], (list, tuple)):
+            parts.append("Choices: " + " | ".join(map(str, rec['choices'])))
+        for k in ['context', 'passage', 'body', 'response', 'completion']:
+            if k in rec and isinstance(rec[k], str):
+                parts.append(rec[k])
+        return " ".join(parts) if parts else str(rec)
+
+    def load_local_file(file_path):
+        """로컬 파일에서 텍스트 로드"""
+        data = []
+        try:
+            if os.path.isfile(file_path):
+                with open(file_path, 'r', encoding='utf-8') as f:
+                    text = f.read().strip()
+                    if min_len < len(text) <= max_len:
+                        data.append(text)
+                    else:
+                        # 긴 텍스트를 청크로 분할
+                        words = text.split()
+                        current_chunk = []
+                        for word in words:
+                            current_chunk.append(word)
+                            chunk_text = " ".join(current_chunk)
+                            if min_len < len(chunk_text) <= max_len:
+                                data.append(chunk_text)
+                                current_chunk = []
+                        # 마지막 청크 처리
+                        if current_chunk:
+                            chunk_text = " ".join(current_chunk)
+                            if min_len < len(chunk_text) <= max_len:
+                                data.append(chunk_text)
+            return data
+        except Exception as e:
+            print(f"Warning: Failed to load local file {file_path}: {e}")
+            return []
+
+    def load_wmdp(domain, role):
+        data = []
+        # 1) 전용 데이터셋 시도 (예: cais/wmdp-bio-forget-corpus)
+        try:
+            ds = load_dataset(f"cais/wmdp-{domain}-{role}-corpus", split="train", cache_dir="./data_cache")
+            for rec in ds:
+                txt = normalize_text(rec)
+                if min_len < len(txt) <= max_len:
+                    data.append(txt)
+            return data
+        except Exception:
+            pass
+        # 2) 통합 데이터셋 시도 (cais/wmdp-corpora config=bio/cyber)
+        try:
+            ds = load_dataset("cais/wmdp-corpora", domain, split="train", cache_dir="./data_cache")
+            role_key = None
+            for k in ['role', 'split', 'subset', 'category', 'part']:
+                if k in ds.features:
+                    role_key = k; break
+            if role_key:
+                ds = ds.filter(lambda x: str(x.get(role_key, "")).lower() == role)
+            for rec in ds:
+                txt = normalize_text(rec)
+                if min_len < len(txt) <= max_len:
+                    data.append(txt)
+            return data
+        except Exception:
+            return []
+
+    def load_corpus(spec):
+        spec = spec.strip()
+        # 로컬 파일 경로 확인
+        if os.path.exists(spec):
+            return load_local_file(spec)
+        
+        spec_lower = spec.lower()
+        if spec_lower == "wikitext":
+            raw = load_dataset("wikitext", "wikitext-2-raw-v1", split="test", cache_dir="./data_cache")
+            return [str(x['text']) for x in raw if len(x['text']) > min_len]
+        if ":" in spec_lower:
+            dom, role = spec_lower.split(":")
+            return load_wmdp(dom, role)
+        return []
+
+    def to_batches(data):
+        return [data[i:i+batch_size] for i in range(0, len(data), batch_size)]
+
+    return (
+        [to_batches(load_corpus(c)) for c in forget_corpora],
+        [to_batches(load_corpus(c)) for c in retain_corpora],
+    )
