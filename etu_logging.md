@@ -1,1037 +1,437 @@
-import json
+#!/usr/bin/env python3
+"""
+ETU H200 GPU 전용 실행 스크립트
+NVIDIA H200 143GB VRAM 환경에 최적화
+"""
+
 import os
+import sys
 import torch
-from transformers import AutoTokenizer, AutoModelForCausalLM
-import random
-import numpy as np
-import math
-import string
-from typing import List, Dict, Optional, Tuple
-from collections import Counter
-random.seed(0)
-from datasets import load_dataset
+import argparse
 
-# Add LoRA support
-try:
-    from peft import LoraConfig, get_peft_model, PeftModel
-    PEFT_AVAILABLE = True
-except ImportError:
-    PEFT_AVAILABLE = False
-    print("Warning: PEFT not available. LoRA features will be disabled.")
+# H200 GPU 환경 최적화
+os.environ["TOKENIZERS_PARALLELISM"] = "false"
+os.environ["CUDA_LAUNCH_BLOCKING"] = "1"  # 디버깅용
 
-################################
-##### LoRA Integration #####
-################################
+# 8대 H200 GPU 환경 최적화 (run_etu_multi_h200.py에서 가져옴)
+os.environ["NCCL_P2P_DISABLE"] = "0"
+os.environ["NCCL_IB_DISABLE"] = "0"
+os.environ["TORCH_NCCL_BLOCKING_WAIT"] = "1"
+os.environ["PYTORCH_CUDA_ALLOC_CONF"] = "max_split_size_mb:256,expandable_segments:True"
 
-def apply_lora_to_model(args, model, chosen_layers):
-    """
-    Apply LoRA to specific layers of the model for efficient unlearning.
-    """
-    if not PEFT_AVAILABLE:
-        raise RuntimeError("PEFT(LoRA) 미설치 상태에서 --use_lora가 지정되었습니다. peft를 설치하거나 --use_lora를 끄세요.")
+def setup_h200_environment():
+    """H200 GPU 환경 설정 및 검증"""
+    print("🚀 H200 GPU 환경 설정 중...")
     
-    # Freeze all layers first
-    freeze_all_layers(model)
+    if not torch.cuda.is_available():
+        raise RuntimeError("CUDA GPU를 찾을 수 없습니다.")
     
-    # Convert chosen_layers to list of integers for PEFT compatibility
-    if isinstance(chosen_layers, str):
-        # Handle "5,6,7" format
-        layer_list = [int(x.strip()) for x in chosen_layers.split(",")]
-    elif isinstance(chosen_layers, int):
-        # Handle single layer ID
-        layer_list = [chosen_layers]
-    elif isinstance(chosen_layers, list):
-        # Already a list
-        layer_list = chosen_layers
-    else:
-        raise ValueError(f"chosen_layers must be string, int, or list, got {type(chosen_layers)}")
+    gpu_count = torch.cuda.device_count()
+    if gpu_count == 0:
+        raise RuntimeError("사용 가능한 GPU가 없습니다.")
     
-    print(f"Applying LoRA to layers: {layer_list}")
+    # GPU 정보 출력
+    for i in range(gpu_count):
+        props = torch.cuda.get_device_properties(i)
+        memory_gb = props.total_memory / 1024**3
+        print(f"GPU {i}: {props.name} ({memory_gb:.1f} GB)")
     
-    lora_config = LoraConfig(
-        r=getattr(args, 'lora_r', 256),
-        lora_alpha=getattr(args, 'lora_alpha', 512),
-        target_modules=getattr(args, 'lora_target_modules', ["q_proj", "k_proj", "v_proj", "o_proj"]),
-        lora_dropout=getattr(args, 'lora_dropout', 0.1),
-        bias="none",
-        task_type="CAUSAL_LM",
-        layers_to_transform=layer_list,
-    )
-
-    model = get_peft_model(model, lora_config)
-    model.print_trainable_parameters()
-    return model
-
-def freeze_all_layers(model):
-    """Freeze all layers of the model."""
-    for layer in model.model.layers:
-        for p in layer.parameters():
-            p.requires_grad = False
-
-def unfreeze_all_layers(model):
-    """Unfreeze all layers of the model."""
-    for layer in model.model.layers:
-        for p in layer.parameters():
-            p.requires_grad = True
-
-def prepare_model_for_unlearning(model, chosen_layers):
-    """Prepare model for unlearning by freezing/unfreezing specific layers."""
-    freeze_all_layers(model)
-    for layer_id in chosen_layers:
-        for p in model.model.layers[layer_id].parameters():
-            p.requires_grad = True
-
-def merge_lora_model(model):
-    """Merge LoRA weights into base model for final saving."""
-    if not PEFT_AVAILABLE:
-        return model
+    # H200 GPU 확인
+    h200_gpus = []
+    for i in range(gpu_count):
+        if "H200" in torch.cuda.get_device_name(i):
+            h200_gpus.append(i)
     
-    if hasattr(model, 'merge_and_unload'):
-        model = model.merge_and_unload()
+    if not h200_gpus:
+        print("⚠️  H200 GPU를 찾을 수 없습니다. 일반 GPU 설정을 사용합니다.")
+        return False
     
-    # Remove LoRA parameters if they exist
-    if isinstance(model, PeftModel):
-        model = model.base_model
-    
-    return model
+    print(f"✅ H200 GPU {len(h200_gpus)}개 감지됨")
+    return True
 
-################################
-##### Statistical utilities #####
-################################
-
-def _span_enrich_vs(vs_ids: List[int], tokenizer, forget_data_list, max_len: int = 512, ngram_max: int = 3, top_cap: int = 4096) -> List[int]:
-    """
-    간단 스팬(n-gram) 결합 강화:
-    - 선택된 V_S 토큰들이 인접 BPE로 자주 붙는 경우, 해당 구성성분 토큰들을 유지/강화.
-    - 구현은 경량화: 빈도 높은 인접 쌍/트리플이 등장하는 구성 토큰을 우선 포함.
-    """
-    from collections import Counter
-    vs = set(vs_ids)
-    adj = Counter()
-    tri = Counter()
-
-    for dataset in forget_data_list:
-        for batch in dataset:
-            enc = tokenizer(batch, return_tensors="pt", padding=True, truncation=True, max_length=max_len)
-            ids = enc["input_ids"].tolist()
-            attn = enc["attention_mask"].tolist()
-            for row, mask in zip(ids, attn):
-                toks = [t for t, m in zip(row, mask) if m]
-                # bigram
-                for i in range(len(toks)-1):
-                    if toks[i] in vs and toks[i+1] in vs:
-                        adj[(toks[i], toks[i+1])] += 1
-                # trigram
-                for i in range(len(toks)-2):
-                    if toks[i] in vs and toks[i+1] in vs and toks[i+2] in vs:
-                        tri[(toks[i], toks[i+1], toks[i+2])] += 1
-
-    # 상위 스팬에 포함된 구성 토큰은 유지(이미 vs에 있음) + 누락된 구성 토큰이 있으면 보강
-    enriched = set(vs)
-    for (a,b), _ in adj.most_common(top_cap):
-        enriched.add(a); enriched.add(b)
-    if ngram_max >= 3:
-        for (a,b,c), _ in tri.most_common(top_cap):
-            enriched.update([a,b,c])
-
-    return sorted(enriched)
-
-def wilson_upper(p_hat: float, n_eff: int, conf: float = 0.95, max_n: int = 2048) -> float:
-    """
-    Wilson upper bound for binomial proportion with configurable n_eff clamping.
-    """
-    import math
+def setup_multi_gpu_environment(strategy="ddp"):
+    """멀티 GPU 환경 설정 (run_etu_multi_h200.py에서 가져옴)"""
+    print(f"🔧 멀티 GPU 환경 설정: {strategy}")
     
-    n = max(1, min(n_eff, max_n))  # Clamp n_eff to max_n
-    # conf는 0.95만 지원(간단화); 필요시 케이스 분기
-    z = 1.959963984540054  # 95% 양측
-    
-    # Wilson interval
-    denom = 1 + z * z / n
-    center = p_hat + z * z / (2 * n)
-    margin = z * math.sqrt((p_hat * (1 - p_hat) + z * z / (4 * n)) / n)
-    return min(1.0, (center + margin) / denom)
-
-################################
-##### Activation functions (ERASER-inspired, optional) #####
-################################
-
-def forward_with_cache(model, inputs, module, no_grad=True):
-    """
-    Extract activations from a specific module during forward pass.
-    Based on ERASER's implementation for activation-based analysis.
-    
-    Note: This is primarily for analysis/debugging purposes in ETU.
-    ETU's core mechanism relies on probability mass estimation over V_S,
-    not activation-based unlearning like ERASER.
-    
-    Use cases:
-    - Layer selection validation: Check if target layers show activation changes
-    - Stability monitoring: Detect activation blow-up during strong suppression
-    - LoRA debugging: Verify only adapter paths change when LoRA is enabled
-    - Ablation studies: Correlate layer activation drift with πθ(S) reduction
-    
-    Performance: Only use when needed - hooks add overhead and memory usage.
-    """
-    cache = []
-    def hook(module, input, output):
-        if isinstance(output, tuple):
-            cache.append(output[0])
-        else:
-            cache.append(output)
-        return None 
-    
-    hook_handle = module.register_forward_hook(hook)
-    
-    if no_grad:
-        with torch.no_grad():
-            _ = model(**inputs)
-    else:
-        _ = model(**inputs)
+    if strategy == "ddp":
+        # Distributed Data Parallel
+        os.environ["MASTER_ADDR"] = "localhost"
+        os.environ["MASTER_PORT"] = "12355"
+        os.environ["WORLD_SIZE"] = str(torch.cuda.device_count())
+        os.environ["RANK"] = "0"
         
-    hook_handle.remove()
-    return cache[0]
-
-def extract_layer_activations(model, tokenizer, data_list, layer_id, device, 
-                            sample_size=100, max_length=512):
-    """
-    Extract activations from a specific layer for analysis.
-    Useful for understanding model behavior and computing statistics.
-    
-    Note: This is primarily for analysis/debugging purposes in ETU.
-    ETU's core mechanism relies on probability mass estimation over V_S,
-    not activation-based unlearning like ERASER.
-    
-    Recommended usage:
-    - Use with --analyze_activations flag only when needed
-    - Call at epoch end or λ update timing for summary statistics
-    - Use no_grad() + eval() mode to minimize overhead
-    - Limit sample_size for performance (e.g., 4-8 batches)
-    """
-    activations = []
-    model.eval()
-    
-    with torch.no_grad():
-        for dataset in data_list:
-            for i, batch in enumerate(dataset):
-                if i >= sample_size:
-                    break
-                    
-                inputs = tokenizer(batch, return_tensors="pt", 
-                                 padding=True, truncation=True, 
-                                 max_length=max_length).to(device)
-                
-                # Get the target layer
-                target_layer = model.model.layers[layer_id]
-                activation = forward_with_cache(model, inputs, target_layer, no_grad=True)
-                
-                # Average over sequence length if 3D
-                if activation.dim() == 3:
-                    activation = activation.mean(dim=1)
-                
-                activations.append(activation)
-    
-    return torch.cat(activations, dim=0) if activations else None
-
-#######################################
-##### PMI-based V_S refinement #####
-#######################################
-
-def _token_counts(data_list: List[List[List[str]]], tokenizer, max_len: int = 512, max_batches_per_split: int = None) -> Tuple[Counter, int]:
-    """
-    Count token frequencies over batched text lists.
-    Returns (Counter, total_token_positions)
-    """
-    cnt = Counter()
-    total = 0
-    for dataset in data_list:
-        for bi, batch in enumerate(dataset):
-            if max_batches_per_split and bi >= max_batches_per_split:
-                break
-            enc = tokenizer(batch, return_tensors="pt", padding=True, truncation=True, max_length=max_len)
-            ids = enc["input_ids"].tolist()
-            attn = enc["attention_mask"].tolist()
-            for row, mask in zip(ids, attn):
-                # count only attended positions
-                for tid, m in zip(row, mask):
-                    if m:
-                        cnt[tid] += 1
-                        total += 1
-    return cnt, total
-
-def build_forbidden_token_ids_pmi(
-    forget_data_list: List[List[List[str]]],
-    retain_data_list: List[List[List[str]]],
-    tokenizer,
-    top_k: int = 2000,
-    min_count: int = 20,
-    alpha: float = 1.0,
-    max_batches_per_split: int = None,
-    span_masking: bool = False,
-    span_ngram_max: int = 3,
-) -> List[int]:
-    """
-    PMI-like refinement for V_S: select tokens strongly enriched in forget vs retain.
-    Score ≈ log-odds with additive smoothing. (forget vs retain)
-    span_masking: 선택된 V_S 토큰들의 인접 n-gram 결합을 약하게 보강(토큰 레벨).
-    """
-    cf, Nf = _token_counts(forget_data_list, tokenizer, max_len=512, max_batches_per_split=max_batches_per_split)
-    cr, Nr = _token_counts(retain_data_list, tokenizer, max_len=512, max_batches_per_split=max_batches_per_split)
-
-    specials = set(tokenizer.all_special_ids or [])
-    for s in specials:
-        cf.pop(s, None); cr.pop(s, None)
-
-    V = max(tokenizer.vocab_size or 50000, len(set(list(cf.keys()) + list(cr.keys()))))
-    scores = []
-    for tid, c_f in cf.items():
-        if c_f < min_count:
-            continue
-        c_r = cr.get(tid, 0)
-        pf = (c_f + alpha) / (Nf + alpha * V)
-        pr = (c_r + alpha) / (Nr + alpha * V)
-        score = float(np.log(max(pf, 1e-12)) - np.log(max(pr, 1e-12)))
-        scores.append((score, tid))
-
-    scores.sort(reverse=True)
-    vs = [tid for _, tid in (scores[:top_k] if top_k else scores)]
-    if not vs:
-        raise RuntimeError("PMI refinement produced empty V_S. Lower --pmi_min_count or increase data.")
-
-    vs = sorted(set(vs))
-    vs = _filter_vs_tokens(tokenizer, vs)
-
-    # --- span-aware enrichment (optional) ---
-    if span_masking and vs:
-        vs = _span_enrich_vs(vs, tokenizer, forget_data_list, ngram_max=span_ngram_max)
-
-    return vs
-
-#######################################
-##### ETU-specific utilities #####
-#######################################
-
-# 중복 정의 제거 - 아래 build_forbidden_token_ids() 함수 사용
-
-def estimate_p_S_over_VS(frozen_model, tokenizer, forget_data_list, V_S, sample_size: int = 100):
-    """
-    Estimate base probability mass p_S = π_base(S) over forbidden token set V_S.
-    """
-    frozen_model.eval()
-    device = next(frozen_model.parameters()).device
-    total = 0.0
-    n = 0
-    
-    with torch.no_grad():
-        for forget_data in forget_data_list:
-            for i, batch in enumerate(forget_data):
-                if n >= sample_size: 
-                    break
-                    
-                enc = tokenizer(batch, return_tensors="pt", padding=True, truncation=True, max_length=512).to(device)
-                logits = frozen_model(**enc).logits  # [B, L, V]
-                probs = torch.softmax(logits, dim=-1)
-                mass_S = probs[..., V_S].sum(dim=-1)  # [B, L] → mass on S per position
-                # average over positions then over batch
-                pS_batch = mass_S.mean()
-                total += pS_batch.item()
-                n += 1
-            if n >= sample_size: 
-                break
-    
-    return (total / max(n, 1)) if n > 0 else 0.1
-
-def q_mass_from_lambda(pS, lam):
-    """
-    Compute q_λ(S) = e^{-λ}·pS / (e^{-λ}·pS + 1 - pS)
-    """
-    num = math.exp(-lam) * pS
-    den = num + (1 - pS)
-    return num / den
-
-def adjust_lambda(lambda_val, current_pS, kl_delta, epsilon,
-                  eta=0.5, lambda_max=20.0, allow_negative=False,
-                  pinsker_cap=0.15,  # NEW: 마진 상한 (절대값)
-                  lower_slack=0.005,  # 기존 하한 여유
-                  upper_slack=0.005   # 기존 상한 여유
-                  ):
-    """
-    Proportional controller with capped Pinsker margin.
-    - margin = epsilon + min(sqrt(KL/2), pinsker_cap)
-    - current_pS: 제어에 사용할 비율 (권장: Wilson upper bound 또는 EMA)
-    """
-    import math
-    # KL 기반 마진을 과도하게 키우지 않도록 캡
-    pinsker = math.sqrt(max(kl_delta, 0.0) / 2.0)
-    margin = epsilon + min(pinsker, pinsker_cap)
-
-    upper_threshold = min(1.0, margin + upper_slack)
-    lower_threshold = max(0.0, epsilon - lower_slack)
-
-    if current_pS > upper_threshold:
-        # 더 줄여야 하므로 λ 증가
-        lambda_val = min(lambda_val + eta, lambda_max)
-    elif current_pS < lower_threshold:
-        # 너무 눌렸으면 조금 되돌림
-        lambda_val = lambda_val - 0.25 * eta
-
-    lo = (-lambda_max if allow_negative else 0.0)
-    hi = lambda_max
-    return float(max(lo, min(hi, lambda_val)))
-
-def compute_forbidden_mask(logits: torch.Tensor, 
-                          forbidden_tokens: Optional[List[int]] = None,
-                          threshold: float = 0.1) -> torch.Tensor:
-    """
-    Compute forbidden mask for ETU.
-    Only use explicit forbidden_tokens (V_S). Probability thresholding is disabled to avoid mis-specifying S.
-    """
-    if forbidden_tokens is None:
-        raise ValueError("ETU requires an explicit forbidden token set V_S. Provide `forbidden_tokens`.")
-    
-    mask = torch.zeros_like(logits, dtype=torch.bool)
-    mask[..., forbidden_tokens] = True
-    return mask
-
-def estimate_probability_mass(model, tokenizer, data_list: List, 
-                            forbidden_tokens: Optional[List[int]] = None,
-                            sample_size: int = 100) -> float:
-    """
-    Estimate π(S): average probability mass on forbidden set V_S across positions and batch.
-    """
-    if not forbidden_tokens:
-        raise ValueError("`forbidden_tokens`(V_S) must be provided to estimate π(S).")
-    
-    model.eval()
-    device = next(model.parameters()).device
-    total = 0.0
-    n = 0
-    
-    with torch.no_grad():
-        for data in data_list:
-            for batch in data:
-                if n >= sample_size:
-                    break
-                    
-                enc = tokenizer(batch, return_tensors="pt", padding=True,
-                               truncation=True, max_length=512).to(device)
-                logits = model(**enc).logits          # [B, L, V]
-                probs = torch.softmax(logits, dim=-1) # [B, L, V]
-                # mass on S per position: sum over V_S
-                mass_S = probs[..., forbidden_tokens].sum(dim=-1)  # [B, L]
-                # average over positions, then over batch
-                pS_batch = mass_S.mean()
-                total += pS_batch.item()
-                n += 1
-            if n >= sample_size:
-                break
-    
-    return (total / n) if n > 0 else 0.1
-
-def create_preference_pairs(retain_data: List, forget_data: List, 
-                          num_pairs: int = 100) -> List[Tuple[str, str, str]]:
-    """
-    Create preference pairs for ETU preference-based refinement.
-    
-    Args:
-        retain_data: Retain dataset
-        forget_data: Forget dataset
-        num_pairs: Number of preference pairs to create
-    
-    Returns:
-        List of (x, y+, y-) tuples
-    """
-    pairs = []
-    
-    for _ in range(num_pairs):
-        # Sample from retain and forget data
-        retain_sample = random.choice(retain_data[0]) if retain_data else "Sample retain text"
-        forget_sample = random.choice(forget_data[0]) if forget_data else "Sample forget text"
+    elif strategy == "fsdp":
+        # Fully Sharded Data Parallel
+        os.environ["FSDP_CONFIG"] = "true"
+        os.environ["FSDP_CPU_OFFLOAD"] = "false"
         
-        # Create a simple prompt
-        prompt = "Generate a response:"
+    elif strategy == "tensor_parallel":
+        # Tensor Parallelism
+        os.environ["TP_CONFIG"] = "true"
+        os.environ["TP_SIZE"] = str(torch.cuda.device_count())
         
-        pairs.append((prompt, retain_sample, forget_sample))
-    
-    return pairs
+    print(f"✅ {strategy.upper()} 환경 설정 완료")
 
-def compute_kl_divergence(p: torch.Tensor, q: torch.Tensor, dim: int = -1, reduction: str = "batchmean") -> torch.Tensor:
-    """
-    Compute KL(p||q) with proper reduction.
-    p, q: probabilities along `dim`
-    """
-    p = torch.clamp(p, min=1e-8)
-    q = torch.clamp(q, min=1e-8)
-    kl_per_elem = p * (torch.log(p) - torch.log(q))
-    
-    if reduction == "none":
-        return kl_per_elem.sum(dim=dim)
-    elif reduction == "mean":
-        return kl_per_elem.sum(dim=dim).mean()
-    elif reduction == "batchmean":
-        # assume batch is dimension 0
-        return kl_per_elem.sum(dim=dim).mean(dim=0).mean()
-    else:
-        return kl_per_elem.sum()
-
-#######################################
-##### Model and data loading code #####
-#######################################
-
-def _resolve_module(model, module_str, layer_id):
-    """
-    Resolve module path like "model.model.layers[7]" to actual module.
-    """
-    s = module_str.format(model_name="model", layer_id=layer_id)
-    mod = model
-    for part in s.split('.'):
-        if part.endswith(']'):  # layers[7] 형태
-            name, idx = part[:-1].split('[')
-            mod = getattr(mod, name)[int(idx)]
-        else:
-            mod = getattr(mod, part)
-    return mod
-
-def get_params(model, layer_ids, param_ids=None, name_keywords=None, module_str="{model_name}.model.layers[{layer_id}]"):
-    """
-    Select trainable parameters by layer index and/or name keywords.
-    Generalized to work with different architectures via module_str.
-    """
-    params = []
-    for layer_id in layer_ids:
-        layer = _resolve_module(model, module_str, layer_id)
-        named = list(layer.named_parameters())
-        if param_ids is not None:
-            # index 기반 선택 with safety check
-            for i in param_ids:
-                if not (0 <= i < len(named)):
-                    raise IndexError(f"param_ids[{i}] out of range for layer {layer_id} (len={len(named)})")
-                params.append(named[i][1])
-            continue  # 이름 키워드 선택과 중복 방지
-        else:
-            # 이름 키워드 기반 (없으면 전체)
-            for name, p in named:
-                if (name_keywords is None) or any(kw in name for kw in name_keywords):
-                    params.append(p)
-    return params
-
-def load_model(model_name_or_path, train: bool = False, infer_on_cpu: bool = False):
-    """
-    Load model with appropriate device mapping for training vs inference.
-    Enhanced for offline/closed network environments.
-    """
-    use_cuda = torch.cuda.is_available()
-    
-    if use_cuda and torch.cuda.is_bf16_supported():
-        torch_dtype = torch.bfloat16
-    elif use_cuda:
-        torch_dtype = torch.float16
-    else:
-        torch_dtype = torch.float32  # CPU에서 fp16 금지
-    
-    # Device mapping strategy
-    if train and use_cuda:
-        device_map = None
-    else:
-        device_map = "cpu" if (infer_on_cpu or not use_cuda) else "auto"
-    
-    # Enhanced error handling for offline environments
-    try:
-        model = AutoModelForCausalLM.from_pretrained(
-            model_name_or_path,
-            torch_dtype=torch_dtype,
-            trust_remote_code=True,
-            device_map=device_map,
-            local_files_only=False,  # Allow online fallback
-        )
-    except Exception as e:
-        print(f"Warning: Online loading failed, trying local files only: {e}")
-        model = AutoModelForCausalLM.from_pretrained(
-            model_name_or_path,
-            torch_dtype=torch_dtype,
-            trust_remote_code=True,
-            device_map=device_map,
-            local_files_only=True,  # Force local only
-        )
-    
-    # Move to CUDA if training and not using device_map
-    if train and use_cuda and device_map is None:
-        model.to("cuda")
-    
-    # Enhanced tokenizer loading with fallback
-    try:
-        tokenizer = AutoTokenizer.from_pretrained(
-            model_name_or_path,
-            trust_remote_code=True,
-            use_fast=False,
-            local_files_only=False,
-        )
-    except Exception as e:
-        print(f"Warning: Online tokenizer loading failed, trying local files only: {e}")
-        tokenizer = AutoTokenizer.from_pretrained(
-            model_name_or_path,
-            trust_remote_code=True,
-            use_fast=False,
-            local_files_only=True,
-        )
-    
-    # Safe tokenizer configuration
-    if not hasattr(tokenizer, 'pad_token_id') or tokenizer.pad_token_id is None:
-        tokenizer.pad_token_id = tokenizer.eos_token_id
-    tokenizer.padding_side = "left"
-    
-    return model, tokenizer
-
-def get_data(forget_corpora, retain_corpora, min_len=50, max_len=2000, batch_size=4):
-    """
-    Flexible data loader supporting:
-    - Local files
-    - HuggingFace datasets (when accessible)
-    - WMDP corpora
-    - WikiText
-    """
-    from datasets import load_dataset
-    import os
-
-    def load_local_file(file_path):
-        """Load text from local file with chunking support"""
-        data = []
-        try:
-            if os.path.isfile(file_path):
-                with open(file_path, 'r', encoding='utf-8') as f:
-                    text = f.read().strip()
-                    
-                    if min_len < len(text) <= max_len:
-                        data.append(text)
-                    else:
-                        # Split long text into chunks
-                        words = text.split()
-                        current_chunk = []
-                        
-                        for word in words:
-                            current_chunk.append(word)
-                            chunk_text = " ".join(current_chunk)
-                            
-                            if min_len < len(chunk_text) <= max_len:
-                                data.append(chunk_text)
-                                current_chunk = []
-                        
-                        # Handle last chunk
-                        if current_chunk:
-                            chunk_text = " ".join(current_chunk)
-                            if min_len < len(chunk_text) <= max_len:
-                                data.append(chunk_text)
-                                
-            return data
-        except Exception as e:
-            print(f"Warning: Failed to load local file {file_path}: {e}")
-            return []
-
-    def normalize_text(rec):
-        if 'text' in rec and isinstance(rec['text'], str):
-            return rec['text']
-        parts = []
-        for k in ['question', 'prompt', 'instruction']:
-            if k in rec and isinstance(rec[k], str):
-                parts.append(rec[k])
-        if 'choices' in rec and isinstance(rec['choices'], (list, tuple)):
-            parts.append("Choices: " + " | ".join(map(str, rec['choices'])))
-        for k in ['context', 'passage', 'body', 'response', 'completion']:
-            if k in rec and isinstance(rec[k], str):
-                parts.append(rec[k])
-        return " ".join(parts) if parts else str(rec)
-
-    def load_wmdp(domain, role):
-        data = []
-        # 1) 전용 데이터셋 시도 (예: cais/wmdp-bio-forget-corpus)
-        try:
-            ds = load_dataset(f"cais/wmdp-{domain}-{role}-corpus", split="train", cache_dir="./data_cache")
-            for rec in ds:
-                txt = normalize_text(rec)
-                if min_len < len(txt) <= max_len:
-                    data.append(txt)
-            return data
-        except Exception:
-            pass
-        # 2) 통합 데이터셋 시도 (cais/wmdp-corpora config=bio/cyber)
-        try:
-            ds = load_dataset("cais/wmdp-corpora", domain, split="train", cache_dir="./data_cache")
-            role_key = None
-            for k in ['role', 'split', 'subset', 'category', 'part']:
-                if k in ds.features:
-                    role_key = k; break
-            if role_key:
-                ds = ds.filter(lambda x: str(x.get(role_key, "")).lower() == role)
-            for rec in ds:
-                txt = normalize_text(rec)
-                if min_len < len(txt) <= max_len:
-                    data.append(txt)
-            return data
-        except Exception:
-            return []
-
-    def load_corpus(spec):
-        spec = spec.strip()
-        print(f"Processing corpus spec: '{spec}'")
+def get_dataset_mapping():
+    """데이터셋 별칭을 실제 경로로 매핑"""
+    return {
+        # HuggingFace 경로
+        "bio:forget": "cais/wmdp-bio-forget-corpus",
+        "bio:retain": "cais/wmdp-corpora:bio-retain-corpus", 
+        "cyber:forget": "cais/wmdp-corpora:cyber-forget-corpus",
+        "cyber:retain": "cais/wmdp-corpora:cyber-retain-corpus",
+        "wikitext": "wikitext",
         
-        # Handle local dataset folders first (./datasets/ 경로)
-        if spec.startswith("./datasets/"):
-            print(f"Loading local dataset folder: {spec}")
-            try:
-                # Map folder paths to actual data locations
-                if spec == "./datasets/bio-forget":
-                    actual_path = "./datasets/bio-forget/data"
-                elif spec == "./datasets/bio-retain":
-                    actual_path = "./datasets/bio-retain/bio-retain-corpus"
-                elif spec == "./datasets/cyber-forget":
-                    actual_path = "./datasets/cyber-forget/cyber-forget-corpus"
-                elif spec == "./datasets/cyber-retain":
-                    actual_path = "./datasets/cyber-retain/cyber-retain-corpus"
-                elif spec == "./datasets/wikitext":
-                    actual_path = "./datasets/wikitext/wikitext-2-raw-v1"
-                else:
-                    actual_path = spec
-                
-                print(f"Loading from actual path: {actual_path}")
-                ds = load_dataset(actual_path, split="train", cache_dir="./data_cache")
-                data = []
-                for rec in ds:
-                    txt = normalize_text(rec)
-                    if min_len < len(txt) <= max_len:
-                        data.append(txt)
-                print(f"Loaded {len(data)} items from local dataset folder")
-                return data
-            except Exception as e:
-                print(f"Failed to load local dataset folder: {e}")
-                return []
-        
-        # Handle local files (파일인 경우만)
-        if os.path.isfile(spec):
-            print(f"Loading local file: {spec}")
-            data = load_local_file(spec)
-            print(f"Loaded {len(data)} items from local file")
-            return data
-        
-        # Handle dataset specs
-        spec_lower = spec.lower()
-        if spec_lower == "wikitext":
-            raw = load_dataset("wikitext", "wikitext-2-raw-v1", split="test", cache_dir="./data_cache")
-            return [str(x['text']) for x in raw if min_len < len(x['text']) <= max_len]
-        if ":" in spec_lower:
-            dom, role = spec_lower.split(":")
-            return load_wmdp(dom, role)
-        
-        print(f"Unknown corpus spec: {spec}")
-        return []
-
-    def to_batches(data):
-        if not data:
-            return []
-        return [data[i:i+batch_size] for i in range(0, len(data), batch_size)]
-
-    # Process forget and retain corpora
-    forget_batches = []
-    retain_batches = []
-    
-    for corpus in forget_corpora:
-        data = load_corpus(corpus)
-        if data:
-            batches = to_batches(data)
-            # 스플릿 단위로 보존 (리스트의 리스트)
-            forget_batches.append(batches)
-    
-    for corpus in retain_corpora:
-        data = load_corpus(corpus)
-        if data:
-            batches = to_batches(data)
-            retain_batches.append(batches)
-    
-    total_forget = sum(len(s) for s in forget_batches)
-    total_retain = sum(len(s) for s in retain_batches)
-    print(f"Data loading complete: {len(forget_batches)} forget splits ({total_forget} batches), "
-          f"{len(retain_batches)} retain splits ({total_retain} batches)")
-    
-    return forget_batches, retain_batches
-
-def build_forbidden_token_ids(forget_data_list, tokenizer, vocab_top_k: Optional[int] = None,
-                             rate: float = 0.01, abs_cap: int = 20000):
-    """
-    Build forbidden token set V_S from forget data with frequency filtering.
-    
-    Mode: Frequency-based filtering (vs PMI-based refinement in build_forbidden_token_ids_pmi)
-    - Filters out high-frequency tokens (likely stop words)
-    - Applies V_S token filtering (numbers, whitespace, pure punctuation)
-    - Use this for basic V_S construction
-    """
-    from collections import Counter
-    
-    cnt = Counter()
-    for forget_data in forget_data_list:
-        for batch in forget_data:
-            # assume batch is a list[str] or list of texts
-            enc = tokenizer(batch, return_tensors="pt", padding=True, truncation=True, max_length=512)
-            ids = enc["input_ids"]  # [B, L]
-            for row in ids.tolist():
-                cnt.update(row)
-    
-    # remove padding/specials
-    special = set(tokenizer.all_special_ids or [])
-    for sid in list(special):
-        if sid in cnt:
-            del cnt[sid]
-    
-    # frequency filtering
-    total_positions = sum(cnt.values())
-    if total_positions > 0:
-        freq_cut = max(1, min(int(rate * total_positions), abs_cap))
-        cnt = Counter({k: v for k, v in cnt.items() if v <= freq_cut})  # KEEP Counter
-    
-    if vocab_top_k:
-        vs = [tid for tid, _ in cnt.most_common(vocab_top_k)]
-    else:
-        vs = list(cnt.keys())
-    
-    vs = sorted(set(vs))
-    return _filter_vs_tokens(tokenizer, vs)
-
-def compute_perplexity(model, tokenizer, data_list, max_samples=100):
-    """
-    Compute perplexity on retain data to measure utility preservation.
-    Fix: ignore padding tokens with ignore_index=-100
-    """
-    model.eval()
-    device = next(model.parameters()).device
-    total_loss = 0.0
-    total_tokens = 0
-    n_samples = 0
-    
-    with torch.no_grad():
-        for data in data_list:
-            for batch in data:
-                if n_samples >= max_samples:
-                    break
-                    
-                inputs = tokenizer(batch, return_tensors="pt", padding=True, truncation=True, max_length=512).to(device)
-                
-                # Fix: mask padding tokens with -100
-                labels = inputs["input_ids"].clone()
-                labels[inputs["attention_mask"] == 0] = -100
-                
-                outputs = model(**inputs)
-                logits = outputs.logits
-                
-                # Shift for next token prediction
-                shift_logits = logits[..., :-1, :].contiguous()
-                shift_labels = labels[..., 1:].contiguous()
-                
-                # Compute loss with ignore_index=-100
-                loss_fct = torch.nn.CrossEntropyLoss(ignore_index=-100, reduction='sum')
-                loss = loss_fct(shift_logits.view(-1, shift_logits.size(-1)), shift_labels.view(-1))
-                
-                # Count only non-padding tokens
-                valid_tokens = (shift_labels != -100).sum().item()
-                
-                total_loss += loss.item()
-                total_tokens += valid_tokens
-                n_samples += 1
-    
-    avg_loss = total_loss / total_tokens if total_tokens > 0 else float('inf')
-    perplexity = torch.exp(torch.tensor(avg_loss)).item()
-    return perplexity
-
-def evaluate_suppression_effect(model, tokenizer, V_S, forget_eval_mini, sample_size=8):
-    """
-    Evaluate π_θ(S) on held-out forget data for unbiased λ control.
-    """
-    model.eval()
-    device = next(model.parameters()).device
-    total = 0.0
-    n = 0
-    
-    with torch.no_grad():
-        for dataset in forget_eval_mini:
-            for batch in dataset:
-                if n >= sample_size:
-                    break
-                enc = tokenizer(batch, return_tensors="pt", padding=True, truncation=True, max_length=512).to(device)
-                logits = model(**enc).logits.float()
-                probs = torch.softmax(logits, dim=-1)
-                mass_S = probs[..., V_S].sum(dim=-1)
-                pS_batch = mass_S.mean()
-                total += pS_batch.item()
-                n += 1
-                if n >= sample_size:
-                    break
-            if n >= sample_size:
-                break
-    
-    return (total / max(n, 1)) if n > 0 else 0.1
-
-def effective_tokens(tokenizer, data_list, max_batches=64):
-    """
-    Calculate effective token count based on actual data for more accurate confidence intervals.
-    """
-    n = 0
-    for k, data in enumerate(data_list):
-        for b, batch in enumerate(data):
-            if k * len(data) + b >= max_batches:
-                break
-            enc = tokenizer(batch, return_tensors="pt", padding=True, truncation=True, max_length=512)
-            n += int(enc["attention_mask"].sum().item())
-    return n
-
-def create_suppression_report(base_model, updated_model, tokenizer, V_S, forget_data_list, retain_data_list, epsilon, wilson_max_n=2048):
-    """
-    Create a comprehensive suppression report.
-    """
-    print("=== ETU Suppression Report ===")
-    
-    # Calculate π_θ(S) on both models
-    base_p_S = estimate_probability_mass(base_model, tokenizer, forget_data_list, V_S, sample_size=100)
-    updated_p_S = estimate_probability_mass(updated_model, tokenizer, forget_data_list, V_S, sample_size=100)
-    
-    # Calculate perplexity on retain data (if available)
-    base_perplexity = updated_perplexity = None
-    if retain_data_list and any(len(s) > 0 for s in retain_data_list):
-        base_perplexity = compute_perplexity(base_model, tokenizer, retain_data_list)
-        updated_perplexity = compute_perplexity(updated_model, tokenizer, retain_data_list)
-        print(f"  - Perplexity on retain: {updated_perplexity:.2f}")
-    
-    # Calculate suppression and utility ratios
-    suppression_ratio = updated_p_S / max(base_p_S, 1e-8)  # 작을수록 억제 효과
-    
-    print(f"=== Results ===")
-    print(f"  - π_base(S): {base_p_S:.4f}")
-    print(f"  - π_θ(S): {updated_p_S:.4f}")
-    print(f"  - Suppression ratio: {suppression_ratio:.2f} (updated/base)")
-    print(f"  - Target ε: {epsilon:.4f}")
-    print(f"  - Target achieved: {'✓' if updated_p_S <= epsilon else '✗'}")
-    
-    # Calculate Wilson upper bounds with actual token count
-    n_eff = max(1, min(effective_tokens(tokenizer, forget_data_list), 100_000))
-    upper_base = wilson_upper(base_p_S, n_eff=n_eff, max_n=wilson_max_n)
-    upper_upd = wilson_upper(updated_p_S, n_eff=n_eff, max_n=wilson_max_n)
-    print(f"  - 95% upper π_base(S): {upper_base:.4f}")
-    print(f"  - 95% upper π_θ(S): {upper_upd:.4f}")
-    print(f"  - Target achieved (95% upper): {'✓' if upper_upd <= epsilon else '✗'}")
-    
-    result = {
-        'base_p_S': base_p_S,
-        'updated_p_S': updated_p_S,
-        'upper_base': upper_base,
-        'upper_upd': upper_upd,
-        'suppression_ratio': suppression_ratio,
-        'target_achieved_point': updated_p_S <= epsilon,
-        'target_achieved_upper': upper_upd <= epsilon,
-        'target': {'epsilon': epsilon, 'achieved_point': updated_p_S <= epsilon, 'achieved_upper': upper_upd <= epsilon},
-        'ci': {'method': 'wilson', 'n_eff': n_eff, 'upper_base': upper_base, 'upper_updated': upper_upd},
+        # 로컬 경로
+        "local:cyber-forget": "./datasets/cyber-forget",
+        "local:cyber-retain": "./datasets/cyber-retain",
+        "local:bio-forget": "./datasets/bio-forget",
+        "local:bio-retain": "./datasets/bio-retain",
+        "local:wikitext": "./datasets/wikitext",
     }
+
+def calculate_optimal_batch_size(model_name_or_path):
+    """모델 크기에 따른 최적 배치 크기 계산 (run_etu_multi_h200.py에서 가져옴)"""
+    gpu_count = torch.cuda.device_count()
+    if gpu_count == 0:
+        return 8  # 기본값
     
-    if base_perplexity is not None and updated_perplexity is not None:
-        perplexity_ratio = updated_perplexity / max(base_perplexity, 1e-8)
-        result.update({
-            'base_perplexity': base_perplexity,
-            'updated_perplexity': updated_perplexity,
-            'perplexity_ratio': perplexity_ratio,
-        })
+    # GPU 메모리 정보 수집
+    device_memories = []
+    for i in range(gpu_count):
+        props = torch.cuda.get_device_properties(i)
+        memory_gb = props.total_memory / 1024**3
+        device_memories.append(memory_gb)
     
-    return result
-
-################################
-##### V_S Token Filtering #####
-################################
-
-def _filter_vs_tokens(tokenizer, ids):
-    """
-    Filter V_S tokens to remove numbers, whitespace, and pure punctuation.
-    """
-    keep = []
-    for t in ids:
-        if t in set(tokenizer.all_special_ids or []): 
-            continue
-        try:
-            s = tokenizer.decode([t], skip_special_tokens=True)
-        except Exception:
-            continue
-        st = s.strip()
-        if not st:
-            continue
-        if st.isdigit():
-            continue
-        if all(ch in string.punctuation for ch in st):
-            continue
-        keep.append(t)
-    return keep
-
-################################
-##### Preference Loss Functions #####
-################################
-
-def _sequence_logprob_from_logits(logits: torch.Tensor, input_ids: torch.Tensor, attention_mask: torch.Tensor) -> torch.Tensor:
-    """
-    평균 토큰 logprob (next-token 방식). padding은 무시.
-    logits: [B, L, V], input_ids: [B, L], attention_mask: [B, L]
-    """
-    # shift for next-token prediction
-    shift_logits = logits[..., :-1, :].contiguous().float()
-    shift_labels = input_ids[..., 1:].contiguous()
-    shift_mask   = attention_mask[..., 1:].contiguous()
-    logp = torch.log_softmax(shift_logits, dim=-1)
-    # gather token logp
-    token_logp = logp.gather(dim=-1, index=shift_labels.unsqueeze(-1)).squeeze(-1)
-    # mask padding
-    token_logp = token_logp * shift_mask
-    # 평균(유효토큰만)
-    denom = torch.clamp(shift_mask.sum(dim=-1), min=1)
-    return (token_logp.sum(dim=-1) / denom)  # [B]
-
-def preference_loss_from_batches(
-    model,
-    tokenizer,
-    pos_texts: List[str],
-    neg_texts: List[str],
-    format_: str = "npo",
-    beta: float = 0.1,
-    margin: float = 0.0,
-    max_length: int = 256,
-    reference_model=None,  # NEW: reference model for DPO
-) -> torch.Tensor:
-    """
-    pos=retain 쪽, neg=forget 쪽.
-    - NPO: max(0, margin + logp_neg - logp_pos) 의 평균 (hinge 없으면 logistic도 가능)
-    - DPO: -log σ( β (logp_pos - logp_neg) ) or with reference model
-    """
-    device = next(model.parameters()).device
-    enc_pos = tokenizer(pos_texts, return_tensors="pt", padding=True, truncation=True, max_length=max_length).to(device)
-    enc_neg = tokenizer(neg_texts, return_tensors="pt", padding=True, truncation=True, max_length=max_length).to(device)
+    total_gpu_memory = sum(device_memories)
+    available_memory = total_gpu_memory * 0.8  # 80% 사용
     
-    # current model (grad ON)
-    logits_pos = model(**enc_pos).logits
-    logits_neg = model(**enc_neg).logits
-    logp_pos = _sequence_logprob_from_logits(logits_pos, enc_pos["input_ids"], enc_pos["attention_mask"])  # [B]
-    logp_neg = _sequence_logprob_from_logits(logits_neg, enc_neg["input_ids"], enc_neg["attention_mask"])  # [B]
-
-    if format_.lower() == "dpo" and reference_model is not None:
-        # reference (no grad)
-        reference_model.eval()
-        ref_device = next(reference_model.parameters()).device
-        with torch.no_grad():
-            r_logits_pos = reference_model(**{k: v.to(ref_device) for k, v in enc_pos.items()}).logits
-            r_logp_pos = _sequence_logprob_from_logits(r_logits_pos, enc_pos["input_ids"].to(ref_device), enc_pos["attention_mask"].to(ref_device))
-            r_logits_neg = reference_model(**{k: v.to(ref_device) for k, v in enc_neg.items()}).logits
-            r_logp_neg = _sequence_logprob_from_logits(r_logits_neg, enc_neg["input_ids"].to(ref_device), enc_neg["attention_mask"].to(ref_device))
-        diff = (logp_pos - r_logp_pos.to(logp_pos.device)) - (logp_neg - r_logp_neg.to(logp_pos.device))
-        loss = torch.nn.functional.softplus(-beta * diff).mean()
-        return loss
-
-    if format_.lower() == "dpo":
-        # self-DPO fallback
-        diff = logp_pos - logp_neg
-        return torch.nn.functional.softplus(-beta * diff).mean()
-
-    # NPO
-    diff = logp_pos - logp_neg
-    if margin > 0:
-        return torch.relu(margin - diff).mean()
+    # 모델 크기별 최적 배치 크기
+    if "70b" in model_name_or_path.lower():
+        estimated_size = 70
+        optimal_batch = 16   # 70B 모델
+    elif "30b" in model_name_or_path.lower():
+        estimated_size = 30
+        optimal_batch = 32   # 30B 모델
+    elif "13b" in model_name_or_path.lower():
+        estimated_size = 13
+        optimal_batch = 64   # 13B 모델
+    elif "7b" in model_name_or_path.lower():
+        estimated_size = 7
+        optimal_batch = 128  # 7B 모델
     else:
-        return torch.relu(-diff).mean()
+        estimated_size = 7
+        optimal_batch = 128  # 기본값
+    
+    # GPU 메모리 제약 고려
+    memory_constrained_batch = int(available_memory / (estimated_size * 2))
+    final_batch = min(optimal_batch, memory_constrained_batch)
+    
+    return final_batch
+
+def resolve_dataset_paths(forget_corpora, retain_corpora):
+    """데이터셋 별칭을 실제 경로로 변환"""
+    mapping = get_dataset_mapping()
+    
+    def resolve_corpus(corpus):
+        if corpus in mapping:
+            return mapping[corpus]
+        return corpus
+    
+    # 단일 문자열인 경우 리스트로 변환
+    if isinstance(forget_corpora, str):
+        if "," in forget_corpora:
+            # 쉼표로 구분된 여러 데이터셋
+            forget_paths = [resolve_corpus(c.strip()) for c in forget_corpora.split(",")]
+        else:
+            # 단일 데이터셋
+            forget_paths = [resolve_corpus(forget_corpora.strip())]
+    else:
+        # 이미 리스트인 경우
+        forget_paths = [resolve_corpus(c.strip()) for c in forget_corpora]
+    
+    if isinstance(retain_corpora, str):
+        if "," in retain_corpora:
+            # 쉼표로 구분된 여러 데이터셋
+            retain_paths = [resolve_corpus(c.strip()) for c in retain_corpora.split(",")]
+        else:
+            # 단일 데이터셋
+            retain_paths = [resolve_corpus(retain_corpora.strip())]
+    else:
+        # 이미 리스트인 경우
+        retain_paths = [resolve_corpus(c.strip()) for c in retain_corpora]
+    
+    return forget_paths, retain_paths  # 리스트 반환
+
+def get_h200_optimized_args():
+    """H200 환경에 최적화된 기본 인자"""
+    parser = argparse.ArgumentParser(description="ETU H200 GPU 최적화 실행")
+    
+    # GPU 선택 및 전략
+    parser.add_argument("--gpu_id", type=int, default=0, 
+                       help="사용할 GPU ID (기본값: 0)")
+    parser.add_argument("--multi_gpu", action="store_true",
+                       help="여러 GPU 사용 (병렬 처리)")
+    parser.add_argument("--strategy", type=str, default="ddp",
+                       choices=["ddp", "fsdp", "tensor_parallel"],
+                       help="멀티 GPU 전략 (기본값: ddp)")
+    parser.add_argument("--batch_size_per_gpu", type=int, default=8,
+                       help="GPU당 배치 크기 (기본값: 8)")
+    
+    # H200 최적화 설정
+    parser.add_argument("--batch_size", type=int, default=64,
+                       help="배치 크기 (H200 권장: 64, 대규모 실험)")
+    parser.add_argument("--max_num_batches", type=int, default=500,
+                       help="최대 배치 수 (H200 권장: 500, 대규모 실험)")
+    parser.add_argument("--frozen_on_cpu", action="store_true", default=False,
+                       help="frozen 모델을 CPU에 (H200 메모리 넉넉하면 False 권장)")
+    
+    # LoRA 최적화
+    parser.add_argument("--use_lora", action="store_true", default=True,
+                       help="LoRA 사용 (H200 권장: true)")
+    parser.add_argument("--lora_r", type=int, default=512,
+                       help="LoRA rank (H200 권장: 512)")
+    parser.add_argument("--lora_alpha", type=int, default=1024,
+                       help="LoRA alpha (H200 권장: 1024)")
+    
+    # ETU 핵심 파라미터
+    parser.add_argument("--epsilon", type=float, default=0.05,
+                       help="억제 목표 ε (기본값: 0.05)")
+    parser.add_argument("--lambda_max", type=float, default=30.0,
+                       help="최대 λ 값 (기본값: 30.0, 강한 억제를 위해)")
+    parser.add_argument("--lambda_update_freq", type=int, default=1,
+                       help="λ 업데이트 빈도 (기본값: 1: 매 스텝)")
+    
+    # 데이터 설정
+    parser.add_argument("--forget_corpora", type=str, 
+                       default="./datasets/cyber-forget",
+                       help="forget할 도메인 (별칭: bio:forget, cyber:forget, 또는 실제 경로)")
+    parser.add_argument("--retain_corpora", type=str,
+                       default="./datasets/bio-retain",
+                       help="retain할 도메인 (별칭: bio:retain, cyber:retain, wikitext, 또는 실제 경로)")
+    
+    # 모델 설정
+    parser.add_argument("--model_name_or_path", type=str,
+                       default="HuggingFaceH4/zephyr-7b-beta",
+                       help="사용할 모델")
+    
+    # 성능 최적화
+    parser.add_argument("--deterministic", action="store_true",
+                       help="결정적 실행 (성능 약간 하락)")
+    parser.add_argument("--verbose", action="store_true", default=True,
+                       help="상세 로깅")
+    parser.add_argument("--gradient_accumulation_steps", type=int, default=4,
+                       help="그래디언트 누적 스텝 (기본값: 4)")
+    parser.add_argument("--mixed_precision", type=str, default="bf16",
+                       choices=["fp16", "bf16", "fp32"],
+                       help="혼합 정밀도 (기본값: bf16)")
+    parser.add_argument("--trust_remote_code", action="store_true",
+                       help="원격 코드 신뢰 (대용량 모델용)")
+    
+    # 추가 ETU 인자들
+    parser.add_argument("--lr", type=float, default=1e-5,
+                       help="학습률 (기본값: 1e-5)")
+    parser.add_argument("--num_epochs", type=int, default=3,
+                       help="에포크 수 (기본값: 3, 수렴을 위해)")
+    parser.add_argument("--min_len", type=int, default=10,
+                       help="최소 시퀀스 길이 (기본값: 10)")
+    parser.add_argument("--max_len", type=int, default=512,
+                       help="최대 시퀀스 길이 (기본값: 512)")
+    
+    # LoRA 관련 인자들
+    parser.add_argument("--layer_id", type=int, default=7,
+                       help="단일 레이어 ID (기본값: 7)")
+    parser.add_argument("--layer_ids", type=str, default="5,6,7",
+                       help="LoRA 적용할 레이어 ID (쉼표로 구분, 기본값: 5,6,7)")
+    parser.add_argument("--param_ids", type=str, default="",
+                       help="LoRA 적용할 파라미터 ID (쉼표로 구분)")
+    parser.add_argument("--name_keywords", type=str, default="q_proj,k_proj,v_proj,o_proj",
+                       help="LoRA 적용할 모듈 이름 키워드 (기본값: q_proj,k_proj,v_proj,o_proj)")
+    parser.add_argument("--module_str", type=str, default="{model_name}.model.layers[{layer_id}]",
+                       help="LoRA 적용할 모듈 문자열 (기본값: {model_name}.model.layers[{layer_id}])")
+    
+    # V_S 관련 인자들
+    parser.add_argument("--use_pmi_vs", action="store_true", default=True,
+                       help="PMI 기반 V_S 사용 (기본 True)")
+    parser.add_argument("--vocab_top_k", type=int, default=1000,
+                       help="V_S에 포함할 상위 토큰 수 (기본값: 1000)")
+    parser.add_argument("--vs_freq_rate", type=float, default=0.1,
+                       help="V_S 빈도 비율 (기본값: 0.1)")
+    parser.add_argument("--vs_abs_cap", type=int, default=1000,
+                       help="V_S 절대 상한 (기본값: 1000)")
+    parser.add_argument("--pmi_top_k", type=int, default=1000,
+                       help="PMI 상위 k 토큰 (기본값: 1000)")
+    parser.add_argument("--pmi_min_count", type=int, default=10,
+                       help="PMI 최소 카운트 (기본값: 10)")
+    parser.add_argument("--pmi_smoothing", type=float, default=0.1,
+                       help="PMI 스무딩 (기본값: 0.1)")
+    parser.add_argument("--pmi_max_batches", type=int, default=500,
+                       help="PMI 최대 배치 수 (기본값: 500, 대규모 실험)")
+    parser.add_argument("--vs_preview_k", type=int, default=10,
+                       help="V_S 미리보기 토큰 수 (기본값: 10)")
+    
+    # Span 마스킹 관련 인자들
+    parser.add_argument("--span_masking", action="store_true", default=False,
+                       help="V_S 토큰들의 n-gram 결합 보강 (기본값: False)")
+    parser.add_argument("--span_ngram_max", type=int, default=3,
+                       help="Span n-gram 최대 차수 (기본값: 3)")
+    
+    # Lambda 관련 인자들
+    parser.add_argument("--allow_negative_lambda", action="store_true", default=False,
+                       help="음수 lambda 허용")
+    parser.add_argument("--lambda_eta", type=float, default=0.1,
+                       help="Lambda 학습률 (기본값: 0.1)")
+    parser.add_argument("--pinsker_cap", type=float, default=0.15,
+                       help="Pinsker margin absolute cap (기본값: 0.15)")
+    parser.add_argument("--use_upper_for_lambda", action=argparse.BooleanOptionalAction, default=True,
+                       help="λ 제어에 Wilson 상한 사용(True) / EMA 사용(False)")
+    
+    # Wilson 관련 인자들
+    parser.add_argument("--wilson_max_n", type=int, default=1000,
+                       help="Wilson 최대 n (기본값: 1000)")
+    
+    # 로깅 관련 인자들
+    parser.add_argument("--log_every", type=int, default=10,
+                       help="로그 출력 빈도 (기본값: 10)")
+    
+    # 출력 관련 인자들
+    parser.add_argument("--output_dir", type=str, default="",
+                       help="출력 디렉토리")
+    
+    # 시드 설정
+    parser.add_argument("--seed", type=int, default=None,
+                       help="랜덤 시드")
+    
+    # Retain 관련 인자들
+    parser.add_argument("--retain_weight", type=float, default=0.0,
+                       help="Retain 가중치 (기본값: 0.0)")
+    parser.add_argument("--retain_broadcast", action="store_true", default=False,
+                       help="Retain 브로드캐스트")
+    
+    # Preference 관련 인자들
+    parser.add_argument("--preference_weight", type=float, default=0.0,
+                       help="Preference 가중치 (기본값: 0.0)")
+    parser.add_argument("--pref_every", type=int, default=10,
+                       help="Preference 업데이트 빈도 (기본값: 10)")
+    parser.add_argument("--pref_format", type=str, default="dpo",
+                       help="Preference 형식 (기본값: dpo)")
+    parser.add_argument("--pref_beta", type=float, default=0.1,
+                       help="Preference beta (기본값: 0.1)")
+    parser.add_argument("--pref_margin", type=float, default=0.1,
+                       help="Preference margin (기본값: 0.1)")
+    parser.add_argument("--pref_max_len", type=int, default=512,
+                       help="Preference 최대 길이 (기본값: 512)")
+    
+    return parser.parse_args()
+
+def run_h200_optimized_etu():
+    """H200 최적화된 ETU 실행"""
+    try:
+        # H200 환경 설정
+        is_h200 = setup_h200_environment()
+        
+        # 인자 파싱
+        args = get_h200_optimized_args()
+        
+        # 최적 배치 크기 계산 (모델 크기 기반)
+        optimal_batch = calculate_optimal_batch_size(args.model_name_or_path)
+        if args.batch_size == 64:  # 기본값인 경우에만 자동 조정
+            args.batch_size = optimal_batch
+            print(f"🔧 모델 크기 기반 최적 배치 크기: {optimal_batch}")
+        
+        # GPU 설정
+        if args.multi_gpu:
+            gpu_ids = list(range(torch.cuda.device_count()))
+            os.environ["CUDA_VISIBLE_DEVICES"] = ",".join(map(str, gpu_ids))
+            print(f"🔄 멀티 GPU 모드: GPU {gpu_ids}")
+            
+            # 멀티 GPU 환경 설정
+            setup_multi_gpu_environment(args.strategy)
+        else:
+            os.environ["CUDA_VISIBLE_DEVICES"] = str(args.gpu_id)
+            print(f"🎯 단일 GPU 모드: GPU {args.gpu_id}")
+        
+        # H200 최적화 설정 적용
+        if is_h200:
+            print("🔧 H200 최적화 설정 적용:")
+            print(f"   - strategy: {args.strategy}")
+            print(f"   - batch_size: {args.batch_size}")
+            print(f"   - batch_size_per_gpu: {args.batch_size_per_gpu}")
+            print(f"   - frozen_on_cpu: {args.frozen_on_cpu}")
+            print(f"   - lora_r: {args.lora_r}")
+            print(f"   - lora_alpha: {args.lora_alpha}")
+            print(f"   - max_num_batches: {args.max_num_batches}")
+            print(f"   - mixed_precision: {args.mixed_precision}")
+            print(f"   - gradient_accumulation_steps: {args.gradient_accumulation_steps}")
+        
+        # ETU 실행 - 올바른 방식으로 호출
+        from etu.unlearn import run_etu
+        from etu.utils import load_model, get_data
+        
+        print("🚀 ETU 실행 시작...")
+        
+        print("📥 모델 로딩 중...")
+        # 서로 다른 인스턴스로 로드해야 함 (동일 참조 금지)
+        from etu.utils import load_model
+
+        frozen_model, tokenizer = load_model(
+            args.model_name_or_path, train=False, infer_on_cpu=args.frozen_on_cpu
+        )
+        updated_model, _ = load_model(
+            args.model_name_or_path, train=True, infer_on_cpu=False
+        )
+        if args.frozen_on_cpu:
+            print("🔧 Frozen 모델을 CPU에 유지 (메모리 절약)")
+        else:
+            print("🔧 Frozen 모델을 GPU에 로드")
+        
+        # 데이터 로딩
+        print("📊 데이터 로딩 중...")
+        
+        # 데이터셋 별칭 해결
+        forget_paths, retain_paths = resolve_dataset_paths(
+            args.forget_corpora, args.retain_corpora
+        )
+        print(f"🔍 Forget 데이터셋: {forget_paths}")
+        print(f"🔍 Retain 데이터셋: {retain_paths}")
+        
+        # layer_ids를 layer_id와 동일하게 설정
+        if args.layer_id is not None:
+            args.layer_ids = str(args.layer_id)
+            print(f"🔧 Layer 설정: layer_id={args.layer_id}, layer_ids={args.layer_ids}")
+        
+        forget_data_list, retain_data_list = get_data(
+            forget_paths,
+            retain_paths,
+            min_len=args.min_len,
+            max_len=args.max_len,
+            batch_size=args.batch_size,
+        )
+        
+        # ETU 실행
+        run_etu(
+            updated_model,
+            frozen_model,
+            tokenizer,
+            forget_data_list,
+            retain_data_list,
+            args,
+        )
+        
+        print("✅ ETU 실행 완료!")
+        
+    except Exception as e:
+        print(f"❌ 오류 발생: {e}")
+        import traceback
+        traceback.print_exc()
+        sys.exit(1)
+
+def main():
+    """메인 함수"""
+    print("=== ETU H200 GPU 최적화 실행 ===")
+    
+    # H200 최적화된 ETU 실행
+    run_h200_optimized_etu()
+
+if __name__ == "__main__":
+    main() 
