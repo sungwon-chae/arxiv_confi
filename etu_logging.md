@@ -1,65 +1,131 @@
-(LLM_EvalPipeline_test) aiuser3@ai-smartlaw:~/ETU$ python3 run_etu_h200.py \
-  --multi_gpu \
-  --strategy ddp \
-  --forget_corpora "./datasets/cyber-forget" \
-  --retain_corpora "./datasets/bio-retain" \
-  --batch_size 32 \
-  --max_num_batches 50 \
-  --layer_id 7 \
-  --epsilon 0.05 \
-  --lambda_max 12.0 \
-  --verbose
-=== ETU H200 GPU 최적화 실행 ===
-🚀 H200 GPU 환경 설정 중...
-GPU 0: NVIDIA H200 (139.8 GB)
-GPU 1: NVIDIA H200 (139.8 GB)
-GPU 2: NVIDIA H200 (139.8 GB)
-GPU 3: NVIDIA H200 (139.8 GB)
-GPU 4: NVIDIA H200 (139.8 GB)
-GPU 5: NVIDIA H200 (139.8 GB)
-GPU 6: NVIDIA H200 (139.8 GB)
-GPU 7: NVIDIA H200 (139.8 GB)
-✅ H200 GPU 8개 감지됨
-🔄 멀티 GPU 모드: GPU [0, 1, 2, 3, 4, 5, 6, 7]
-🔧 멀티 GPU 환경 설정: ddp
-✅ DDP 환경 설정 완료
-🔧 H200 최적화 설정 적용:
-   - strategy: ddp
-   - batch_size: 32
-   - batch_size_per_gpu: 8
-   - frozen_on_cpu: True
-   - lora_r: 512
-   - lora_alpha: 1024
-   - max_num_batches: 50
-   - mixed_precision: bf16
-   - gradient_accumulation_steps: 4
-🚀 ETU 실행 시작...
-📥 모델 로딩 중...
-Loading checkpoint shards: 100%|███████████████████████████████████████████| 8/8 [00:00<00:00, 369.62it/s]
-❌ 오류 발생: CUDA out of memory. Tried to allocate 112.00 MiB. GPU 0 has a total capacity of 139.81 GiB of which 24.12 MiB is free. Process 1117159 has 127.15 GiB memory in use. Including non-PyTorch memory, this process has 12.62 GiB memory in use. Of the allocated memory 12.10 GiB is allocated by PyTorch, and 7.55 MiB is reserved by PyTorch but unallocated. If reserved but unallocated memory is large try setting PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True to avoid fragmentation.  See documentation for Memory Management  (https://pytorch.org/docs/stable/notes/cuda.html#environment-variables)
-Traceback (most recent call last):
-  File "/data/aiuser3/ETU/run_etu_h200.py", line 367, in run_h200_optimized_etu
-    base_model, tokenizer = load_model(args.model_name_or_path, train=True)
-                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/data/aiuser3/ETU/etu/utils.py", line 512, in load_model
-    model.to("cuda")
-  File "/data/aiuser3/LLM_EvalPipeline_test/.venv/lib/python3.12/site-packages/transformers/modeling_utils.py", line 4333, in to
-    return super().to(*args, **kwargs)
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/data/aiuser3/LLM_EvalPipeline_test/.venv/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1371, in to
-    return self._apply(convert)
-           ^^^^^^^^^^^^^^^^^^^^
-  File "/data/aiuser3/LLM_EvalPipeline_test/.venv/lib/python3.12/site-packages/torch/nn/modules/module.py", line 930, in _apply
-    module._apply(fn)
-  File "/data/aiuser3/LLM_EvalPipeline_test/.venv/lib/python3.12/site-packages/torch/nn/modules/module.py", line 930, in _apply
-    module._apply(fn)
-  File "/data/aiuser3/LLM_EvalPipeline_test/.venv/lib/python3.12/site-packages/torch/nn/modules/module.py", line 930, in _apply
-    module._apply(fn)
-  [Previous line repeated 2 more times]
-  File "/data/aiuser3/LLM_EvalPipeline_test/.venv/lib/python3.12/site-packages/torch/nn/modules/module.py", line 957, in _apply
-    param_applied = fn(param)
-                    ^^^^^^^^^
-  File "/data/aiuser3/LLM_EvalPipeline_test/.venv/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1357, in convert
-    return t.to(
-           ^^^^^
-torch.OutOfMemoryError: CUDA out of memory. Tried to allocate 112.00 MiB. GPU 0 has a total capacity of 139.81 GiB of which 24.12 MiB is free. Process 1117159 has 127.15 GiB memory in use. Including non-PyTorch memory, this process has 12.62 GiB memory in use. Of the allocated memory 12.10 GiB is allocated by PyTorch, and 7.55 MiB is reserved by PyTorch but unallocated. If reserved but unallocated memory is large try setting PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True to avoid fragmentation.  See documentation for Memory Management  (https://pytorch.org/docs/stable/notes/cuda.html#environment-variables)
+(LLM_EvalPipeline_test) aiuser3@ai-smartlaw:~/ETU$ nvidia-smi
+Tue Sep  2 15:14:35 2025       
++-----------------------------------------------------------------------------------------+
+| NVIDIA-SMI 570.158.01             Driver Version: 570.158.01     CUDA Version: 12.8     |
+|-----------------------------------------+------------------------+----------------------+
+| GPU  Name                 Persistence-M | Bus-Id          Disp.A | Volatile Uncorr. ECC |
+| Fan  Temp   Perf          Pwr:Usage/Cap |           Memory-Usage | GPU-Util  Compute M. |
+|                                         |                        |               MIG M. |
+|=========================================+========================+======================|
+|   0  NVIDIA H200                    Off |   00000000:0A:00.0 Off |                    0 |
+| N/A   30C    P0            122W /  700W |  130215MiB / 143771MiB |      0%      Default |
+|                                         |                        |             Disabled |
++-----------------------------------------+------------------------+----------------------+
+|   1  NVIDIA H200                    Off |   00000000:18:00.0 Off |                    0 |
+| N/A   26C    P0             78W /  700W |       0MiB / 143771MiB |      0%      Default |
+|                                         |                        |             Disabled |
++-----------------------------------------+------------------------+----------------------+
+|   2  NVIDIA H200                    Off |   00000000:3B:00.0 Off |                    0 |
+| N/A   25C    P0             74W /  700W |       0MiB / 143771MiB |      0%      Default |
+|                                         |                        |             Disabled |
++-----------------------------------------+------------------------+----------------------+
+|   3  NVIDIA H200                    Off |   00000000:44:00.0 Off |                    0 |
+| N/A   28C    P0             77W /  700W |       0MiB / 143771MiB |      0%      Default |
+|                                         |                        |             Disabled |
++-----------------------------------------+------------------------+----------------------+
+|   4  NVIDIA H200                    Off |   00000000:87:00.0 Off |                    0 |
+| N/A   28C    P0             77W /  700W |       0MiB / 143771MiB |      0%      Default |
+|                                         |                        |             Disabled |
++-----------------------------------------+------------------------+----------------------+
+|   5  NVIDIA H200                    Off |   00000000:90:00.0 Off |                    0 |
+| N/A   26C    P0             79W /  700W |       0MiB / 143771MiB |      0%      Default |
+|                                         |                        |             Disabled |
++-----------------------------------------+------------------------+----------------------+
+|   6  NVIDIA H200                    Off |   00000000:B9:00.0 Off |                    0 |
+| N/A   25C    P0             76W /  700W |       0MiB / 143771MiB |      0%      Default |
+|                                         |                        |             Disabled |
++-----------------------------------------+------------------------+----------------------+
+|   7  NVIDIA H200                    Off |   00000000:C2:00.0 Off |                    0 |
+| N/A   28C    P0             76W /  700W |       0MiB / 143771MiB |      0%      Default |
+|                                         |                        |             Disabled |
++-----------------------------------------+------------------------+----------------------+
+                                                                                         
++-----------------------------------------------------------------------------------------+
+| Processes:                                                                              |
+|  GPU   GI   CI              PID   Type   Process name                        GPU Memory |
+|        ID   ID                                                               Usage      |
+|=========================================================================================|
+|    0   N/A  N/A         1117159      C   VLLM::EngineCore                      13020... |
++-----------------------------------------------------------------------------------------+
+(LLM_EvalPipeline_test) aiuser3@ai-smartlaw:~/ETU$ sudo fuser -v /dev/nvidia*
+[sudo] password for aiuser3: 
+                     USER        PID ACCESS COMMAND
+/dev/nvidia0:        aiuser1   1116621 F.... vllm
+                     aiuser1   1117159 F...m VLLM::EngineCor
+/dev/nvidia1:        aiuser1   1116621 F.... vllm
+                     aiuser1   1117159 F.... VLLM::EngineCor
+/dev/nvidia2:        aiuser1   1116621 F.... vllm
+                     aiuser1   1117159 F.... VLLM::EngineCor
+/dev/nvidia3:        aiuser1   1116621 F.... vllm
+                     aiuser1   1117159 F.... VLLM::EngineCor
+/dev/nvidia4:        aiuser1   1116621 F.... vllm
+                     aiuser1   1117159 F.... VLLM::EngineCor
+/dev/nvidia5:        aiuser1   1116621 F.... vllm
+                     aiuser1   1117159 F.... VLLM::EngineCor
+/dev/nvidia6:        aiuser1   1116621 F.... vllm
+                     aiuser1   1117159 F.... VLLM::EngineCor
+/dev/nvidia7:        aiuser1   1116621 F.... vllm
+                     aiuser1   1117159 F.... VLLM::EngineCor
+/dev/nvidiactl:      aiuser1   1116621 F.... vllm
+                     aiuser1   1117159 F...m VLLM::EngineCor
+/dev/nvidia-nvlink:  root       4334 F.... nv-fabricmanage
+/dev/nvidia-nvswitch0:
+                     root       4334 F.... nv-fabricmanage
+/dev/nvidia-nvswitch1:
+                     root       4334 F.... nv-fabricmanage
+/dev/nvidia-nvswitch2:
+                     root       4334 F.... nv-fabricmanage
+/dev/nvidia-nvswitch3:
+                     root       4334 F.... nv-fabricmanage
+/dev/nvidia-uvm:     aiuser1   1116621 F.... vllm
+                     aiuser1   1117159 F...m VLLM::EngineCor
+(LLM_EvalPipeline_test) aiuser3@ai-smartlaw:~/ETU$ nvidia-smi
+Tue Sep  2 15:15:08 2025       
++-----------------------------------------------------------------------------------------+
+| NVIDIA-SMI 570.158.01             Driver Version: 570.158.01     CUDA Version: 12.8     |
+|-----------------------------------------+------------------------+----------------------+
+| GPU  Name                 Persistence-M | Bus-Id          Disp.A | Volatile Uncorr. ECC |
+| Fan  Temp   Perf          Pwr:Usage/Cap |           Memory-Usage | GPU-Util  Compute M. |
+|                                         |                        |               MIG M. |
+|=========================================+========================+======================|
+|   0  NVIDIA H200                    Off |   00000000:0A:00.0 Off |                    0 |
+| N/A   30C    P0            122W /  700W |  130215MiB / 143771MiB |      0%      Default |
+|                                         |                        |             Disabled |
++-----------------------------------------+------------------------+----------------------+
+|   1  NVIDIA H200                    Off |   00000000:18:00.0 Off |                    0 |
+| N/A   26C    P0             78W /  700W |       0MiB / 143771MiB |      0%      Default |
+|                                         |                        |             Disabled |
++-----------------------------------------+------------------------+----------------------+
+|   2  NVIDIA H200                    Off |   00000000:3B:00.0 Off |                    0 |
+| N/A   24C    P0             74W /  700W |       0MiB / 143771MiB |      0%      Default |
+|                                         |                        |             Disabled |
++-----------------------------------------+------------------------+----------------------+
+|   3  NVIDIA H200                    Off |   00000000:44:00.0 Off |                    0 |
+| N/A   27C    P0             77W /  700W |       0MiB / 143771MiB |      0%      Default |
+|                                         |                        |             Disabled |
++-----------------------------------------+------------------------+----------------------+
+|   4  NVIDIA H200                    Off |   00000000:87:00.0 Off |                    0 |
+| N/A   28C    P0             77W /  700W |       0MiB / 143771MiB |      0%      Default |
+|                                         |                        |             Disabled |
++-----------------------------------------+------------------------+----------------------+
+|   5  NVIDIA H200                    Off |   00000000:90:00.0 Off |                    0 |
+| N/A   26C    P0             79W /  700W |       0MiB / 143771MiB |      0%      Default |
+|                                         |                        |             Disabled |
++-----------------------------------------+------------------------+----------------------+
+|   6  NVIDIA H200                    Off |   00000000:B9:00.0 Off |                    0 |
+| N/A   25C    P0             76W /  700W |       0MiB / 143771MiB |      0%      Default |
+|                                         |                        |             Disabled |
++-----------------------------------------+------------------------+----------------------+
+|   7  NVIDIA H200                    Off |   00000000:C2:00.0 Off |                    0 |
+| N/A   28C    P0             76W /  700W |       0MiB / 143771MiB |      0%      Default |
+|                                         |                        |             Disabled |
++-----------------------------------------+------------------------+----------------------+
+                                                                                         
++-----------------------------------------------------------------------------------------+
+| Processes:                                                                              |
+|  GPU   GI   CI              PID   Type   Process name                        GPU Memory |
+|        ID   ID                                                               Usage      |
+|=========================================================================================|
+|    0   N/A  N/A         1117159      C   VLLM::EngineCore                      13020... |
++-----------------------------------------------------------------------------------------+
+(LLM_EvalPipeline_test) aiuser3@ai-smartlaw:~/ETU$ 
