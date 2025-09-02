@@ -1,128 +1,93 @@
-#!/bin/bash
-# 8대 H200 GPU 대용량 모델 실험 스크립트 (2025-09, Scout 포함, Zephyr 멀티도메인)
+#!/usr/bin/env bash
+# ETU 논문 실험 자동화 스크립트 (H200 GPU 최적화, Zephyr-7B)
 set -euo pipefail
 
-echo "=== ETU 8x H200 Large-model Experiments (2025-09) ==="
-echo "Starting at: $(date)"
+echo "=== ETU Paper Experiments (H200 GPU 최적화) ==="
+date
 
-# 8대 H200 GPU 환경 확인
-GPU_COUNT=$(nvidia-smi --query-gpu=name --format=csv,noheader,nounits | wc -l)
-H200_COUNT=$(nvidia-smi --query-gpu=name --format=csv,noheader,nounits | grep -c "H200")
+# -------- GPU 환경 요약 --------
+GPU_NAMES=$(nvidia-smi --query-gpu=name --format=csv,noheader,nounits || true)
+GPU_COUNT=$(echo "${GPU_NAMES:-}" | wc -l | awk '{print $1}')
+H200_COUNT=$(echo "${GPU_NAMES:-}" | grep -c "H200" || true)
+echo "GPU Summary:"
+echo " - 총 GPU: ${GPU_COUNT}"
+echo " - H200 GPU: ${H200_COUNT}"
+echo " - 첫 GPU: $(echo "${GPU_NAMES:-}" | head -1)"
 
-echo "🔍 GPU 환경 분석:"
-echo "   - 총 GPU 개수: $GPU_COUNT"
-echo "   - H200 GPU 개수: $H200_COUNT"
-
-if [ "$H200_COUNT" -lt 8 ]; then
-  echo "⚠️  H200 GPU가 8개 미만입니다. 일부 실험만 실행합니다."
-  MAX_GPU=$H200_COUNT
+# -------- H200 최적화 파라미터 --------
+if [[ "${H200_COUNT}" -ge 1 ]]; then
+  echo "🚀 H200 GPU 환경 감지됨 - 최적화된 설정 사용"
+  BATCH_SIZE=64            # H200 기준 대규모 실험 (7B + LoRA)
+  LORA_R=512
+  LORA_ALPHA=1024
+  MAX_BATCHES=500
+  FROZEN_ON_CPU=true       # 메모리 절약을 위해 true
+  STRATEGY="ddp"           # run_etu_h200.py가 지원하면 전달
 else
-  echo "✅ 8대 H200 GPU 모두 감지됨! 모든 실험 실행 가능"
-  MAX_GPU=8
+  echo "⚠️  H200 GPU가 아님 - 보수적 설정 사용"
+  BATCH_SIZE=8
+  LORA_R=256
+  LORA_ALPHA=512
+  MAX_BATCHES=80
+  FROZEN_ON_CPU=true
+  STRATEGY="ddp"
 fi
+
+echo "📊 최적화 설정:"
+echo " - strategy: ${STRATEGY}"
+echo " - batch_size: ${BATCH_SIZE}"
+echo " - lora_r: ${LORA_R}"
+echo " - lora_alpha: ${LORA_ALPHA}"
+echo " - max_num_batches: ${MAX_BATCHES}"
+echo " - frozen_on_cpu: ${FROZEN_ON_CPU}"
 echo ""
 
-###############################################################################
-# 1) OpenAI GPT-OSS-20B (경량 MoE) — DDP
-echo "=== gpt-oss-20b 실험 시작 ==="
-python run_etu_multi_h200.py \
-  --strategy ddp \
-  --model_name_or_path "openai/gpt-oss-20b" \
-  --batch_size 128 \
-  --max_num_batches 500 \
-  --lora_r 512 \
-  --lora_alpha 1024 \
-  --epsilon 0.05 \
-  --lambda_max 30 \
-  --trust_remote_code \
-  --verbose
+# -------- 경로/출력 준비 --------
+MODEL_ID="HuggingFaceH4/zephyr-7b-beta"
+FORGET_DIR="./datasets/cyber-forget"
+RETAIN_DIR="./datasets/bio-retain"
+OUT_DIR="paper_results/zephyr_7b"
+LOG_DIR="${OUT_DIR}/logs"
+mkdir -p "${OUT_DIR}" "${LOG_DIR}"
 
-# 2) OpenAI GPT-OSS-120B (대형 MoE) — FSDP
-echo "=== gpt-oss-120b 실험 시작 ==="
-python run_etu_multi_h200.py \
-  --strategy fsdp \
-  --model_name_or_path "openai/gpt-oss-120b" \
-  --batch_size 24 \
-  --max_num_batches 500 \
-  --lora_r 1024 \
-  --lora_alpha 2048 \
-  --epsilon 0.05 \
-  --lambda_max 30 \
-  --trust_remote_code \
-  --verbose
+# 데이터셋 존재 확인 (없으면 HF ID로 대체 예시)
+if [[ ! -d "${FORGET_DIR}" ]] || [[ ! -d "${RETAIN_DIR}" ]]; then
+  echo "ℹ️ 로컬 데이터셋 디렉토리가 없어 HF 데이터셋으로 대체합니다."
+  FORGET_DIR="cais/wmdp-corpora:cyber-forget-corpus"
+  RETAIN_DIR="cais/wmdp-corpora:bio-retain-corpus"
+fi
 
-# 3) Qwen3-32B (dense) — DDP
-echo "=== Qwen3-32B 실험 시작 ==="
-python run_etu_multi_h200.py \
-  --strategy ddp \
-  --model_name_or_path "Qwen/Qwen3-32B" \
-  --batch_size 64 \
-  --max_num_batches 500 \
-  --lora_r 768 \
-  --lora_alpha 1536 \
-  --epsilon 0.05 \
-  --lambda_max 30 \
-  --trust_remote_code \
-  --verbose
+# -------- 런타임 환경 변수(권장) --------
+export NCCL_P2P_DISABLE=0
+export NCCL_IB_DISABLE=0
+export TORCH_NCCL_BLOCKING_WAIT=1
+export PYTORCH_CUDA_ALLOC_CONF=max_split_size_mb:256
+export HF_HOME="${HF_HOME:-$HOME/.cache/huggingface}"
 
-# 4) DeepSeek-R1-Distill-Qwen-32B — FSDP
-echo "=== DeepSeek-R1-Distill-Qwen-32B 실험 시작 ==="
-python run_etu_multi_h200.py \
-  --strategy fsdp \
-  --model_name_or_path "deepseek-ai/DeepSeek-R1-Distill-Qwen-32B" \
-  --batch_size 48 \
-  --max_num_batches 500 \
-  --lora_r 768 \
-  --lora_alpha 1536 \
-  --epsilon 0.05 \
-  --lambda_max 30 \
-  --trust_remote_code \
-  --verbose
+# -------- 멀티 GPU 런치 설정 --------
+WORLD_SIZE=${GPU_COUNT:-1}
+if [[ "${WORLD_SIZE}" -ge 2 ]]; then
+  LAUNCHER="torchrun --standalone --nproc_per_node=${WORLD_SIZE}"
+else
+  LAUNCHER="python"
+fi
 
-# 5) DeepSeek-R1-Distill-Qwen-14B — DDP
-echo "=== DeepSeek-R1-Distill-Qwen-14B 실험 시작 ==="
-python run_etu_multi_h200.py \
-  --strategy ddp \
-  --model_name_or_path "deepseek-ai/DeepSeek-R1-Distill-Qwen-14B" \
-  --batch_size 160 \
-  --max_num_batches 500 \
-  --lora_r 512 \
-  --lora_alpha 1024 \
+# -------- 실험 실행 --------
+echo "=== Zephyr-7B ETU 실험 시작 ==="
+${LAUNCHER} run_etu_h200.py \
+  --model_name_or_path "${MODEL_ID}" \
   --epsilon 0.05 \
-  --lambda_max 30 \
-  --trust_remote_code \
-  --verbose
+  --lambda_max 30.0 \
+  --batch_size "${BATCH_SIZE}" \
+  --max_num_batches "${MAX_BATCHES}" \
+  --lora_r "${LORA_R}" \
+  --lora_alpha "${LORA_ALPHA}" \
+  --forget_corpora "${FORGET_DIR}" \
+  --retain_corpora "${RETAIN_DIR}" \
+  --strategy "${STRATEGY}" \
+  --frozen_on_cpu "${FROZEN_ON_CPU}" \
+  --output_dir "${OUT_DIR}" \
+  --verbose 2>&1 | tee "${LOG_DIR}/zephyr_7b_$(date +%Y%m%d_%H%M%S).log"
 
-# 6) Meta Llama 4 Scout (109B) — FSDP
-echo "=== Llama-4-Scout-109B 실험 시작 ==="
-python run_etu_multi_h200.py \
-  --strategy fsdp \
-  --model_name_or_path "meta-llama/Llama-4-Scout-109B" \
-  --batch_size 16 \
-  --max_num_batches 500 \
-  --lora_r 1024 \
-  --lora_alpha 2048 \
-  --epsilon 0.05 \
-  --lambda_max 30 \
-  --trust_remote_code \
-  --verbose
-
-# 7) 멀티 도메인 대용량 실험 — Zephyr-7B # batch size 512로 향상 (리소스 넉넉함)
-echo "=== 멀티 도메인 (Zephyr-7B) 실험 시작 ==="
-python run_etu_multi_h200.py \
-  --strategy ddp \
-  --model_name_or_path "HuggingFaceH4/zephyr-7b-beta" \
-  --batch_size 512 \
-  --max_num_batches 500 \
-  --lora_r 512 \
-  --lora_alpha 1024 \
-  --forget_corpora "cais/wmdp-corpora:cyber-forget-corpus" \
-  --retain_corpora "cais/wmdp-corpora:bio-retain-corpus" \
-  --epsilon 0.05 \
-  --lambda_max 30 \
-  --trust_remote_code \
-  --verbose
-
-echo "=== 모든 대용량 모델 실험 완료 ==="
-echo "Completed at: $(date)"
-echo "Results saved in models/ directory"
+echo "All experiments completed at: $(date)"
+echo "Results saved in ${OUT_DIR}/ and models/ (모델 아티팩트 저장 위치는 스크립트 구현에 따름)"
