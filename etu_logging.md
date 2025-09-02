@@ -1,9 +1,10 @@
-python3 - <<'PY'
+(LLM_EvalPipeline_test) aiuser3@ai-smartlaw:~/ETU$ python3 - <<'PY'
 import inspect, etu.utils as U
 print("utils path:", U.__file__)
 print("adjust_lambda params:", list(inspect.signature(U.adjust_lambda).parameters))
 PY
-
+utils path: /data/aiuser3/ETU/etu/utils.py
+adjust_lambda params: ['lambda_val', 'current_pS', 'kl_delta', 'epsilon', 'eta', 'lambda_max', 'allow_negative', 'pinsker_cap', 'lower_slack', 'upper_slack']
 
 python3 run_etu_h200.py \
   --forget_corpora "./datasets/bio-forget" \
