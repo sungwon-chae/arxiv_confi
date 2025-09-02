@@ -1,1 +1,1 @@
-python3 run_etu_h200.py --forget_corpora "./datasets/cyber-forget" --retain_corpora "./datasets/bio-retain" --batch_size 10 --max_num_batches 3 --layer_id 7  --verbose
+python3 run_etu_h200.py --forget_corpora "./datasets/cyber-forget" --retain_corpora "./datasets/bio-retain" --batch_size 32 --max_num_batches 50 --layer_id 7 --epsilon 0.05 --lambda_max 12.0 --verbose
