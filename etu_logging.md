@@ -1,4 +1,4 @@
-python3 run_etu_h200.py \
+(LLM_EvalPipeline_test) aiuser3@ai-smartlaw:~/ETU$ python3 run_etu_h200.py \
   --forget_corpora "./datasets/bio-forget/data" \
   --retain_corpora "./datasets/bio-retain/bio-retain-corpus" \
   --batch_size 55 \
@@ -23,3 +23,36 @@ python3 run_etu_h200.py \
   --pinsker_cap 0.10 \
   --mixed_precision bf16 \
   --verbose
+=== ETU H200 GPU 최적화 실행 ===
+🚀 H200 GPU 환경 설정 중...
+GPU 0: NVIDIA H200 (139.8 GB)
+GPU 1: NVIDIA H200 (139.8 GB)
+GPU 2: NVIDIA H200 (139.8 GB)
+GPU 3: NVIDIA H200 (139.8 GB)
+GPU 4: NVIDIA H200 (139.8 GB)
+GPU 5: NVIDIA H200 (139.8 GB)
+GPU 6: NVIDIA H200 (139.8 GB)
+✅ H200 GPU 7개 감지됨
+❌ 오류 발생: argument --use_lora: conflicting option string: --use_lora
+Traceback (most recent call last):
+  File "/data/aiuser3/ETU/run_etu_h200.py", line 344, in run_h200_optimized_etu
+    args = get_h200_optimized_args()
+           ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/data/aiuser3/ETU/run_etu_h200.py", line 255, in get_h200_optimized_args
+    parser.add_argument("--use_lora", action="store_true", help="Use LoRA for efficient parameter updates")
+  File "/usr/lib/python3.12/argparse.py", line 1507, in add_argument
+    return self._add_action(action)
+           ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/argparse.py", line 1889, in _add_action
+    self._optionals._add_action(action)
+  File "/usr/lib/python3.12/argparse.py", line 1709, in _add_action
+    action = super(_ArgumentGroup, self)._add_action(action)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/argparse.py", line 1521, in _add_action
+    self._check_conflict(action)
+  File "/usr/lib/python3.12/argparse.py", line 1658, in _check_conflict
+    conflict_handler(action, confl_optionals)
+  File "/usr/lib/python3.12/argparse.py", line 1667, in _handle_conflict_error
+    raise ArgumentError(action, message % conflict_string)
+argparse.ArgumentError: argument --use_lora: conflicting option string: --use_lora
+(LLM_EvalPipeline_test) aiuser3@ai-smartlaw:~/ETU$ 
