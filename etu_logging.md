@@ -1,10 +1,8 @@
 python3 - <<'PY'
-  import inspect, etu.utils as U
-  print("utils path:", U.__file__)
-  print("adjust_lambda params:", list(inspect.signature(U.adjust_lambda).parameters))
-  PY
-
-
+import inspect, etu.utils as U
+print("utils path:", U.__file__)
+print("adjust_lambda params:", list(inspect.signature(U.adjust_lambda).parameters))
+PY
 
 
 python3 run_etu_h200.py \
