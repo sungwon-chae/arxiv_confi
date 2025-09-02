@@ -1,67 +1,451 @@
-(LLM_EvalPipeline_test) aiuser3@ai-smartlaw:~/ETU$ python3 run_etu_h200.py \
+#!/usr/bin/env python3
+"""
+ETU H200 GPU 전용 실행 스크립트
+NVIDIA H200 143GB VRAM 환경에 최적화
+"""
+
+import os
+import sys
+import torch
+import argparse
+
+# H200 GPU 환경 최적화
+os.environ["TOKENIZERS_PARALLELISM"] = "false"
+os.environ["CUDA_LAUNCH_BLOCKING"] = "1"  # 디버깅용
+
+# 8대 H200 GPU 환경 최적화 (run_etu_multi_h200.py에서 가져옴)
+os.environ["NCCL_P2P_DISABLE"] = "0"
+os.environ["NCCL_IB_DISABLE"] = "0"
+os.environ["TORCH_NCCL_BLOCKING_WAIT"] = "1"
+os.environ["PYTORCH_CUDA_ALLOC_CONF"] = "max_split_size_mb:256,expandable_segments:True"
+
+def setup_h200_environment():
+    """H200 GPU 환경 설정 및 검증"""
+    print("🚀 H200 GPU 환경 설정 중...")
+    
+    if not torch.cuda.is_available():
+        raise RuntimeError("CUDA GPU를 찾을 수 없습니다.")
+    
+    gpu_count = torch.cuda.device_count()
+    if gpu_count == 0:
+        raise RuntimeError("사용 가능한 GPU가 없습니다.")
+    
+    # GPU 정보 출력
+    for i in range(gpu_count):
+        props = torch.cuda.get_device_properties(i)
+        memory_gb = props.total_memory / 1024**3
+        print(f"GPU {i}: {props.name} ({memory_gb:.1f} GB)")
+    
+    # H200 GPU 확인
+    h200_gpus = []
+    for i in range(gpu_count):
+        if "H200" in torch.cuda.get_device_name(i):
+            h200_gpus.append(i)
+    
+    if not h200_gpus:
+        print("⚠️  H200 GPU를 찾을 수 없습니다. 일반 GPU 설정을 사용합니다.")
+        return False
+    
+    print(f"✅ H200 GPU {len(h200_gpus)}개 감지됨")
+    return True
+
+def setup_multi_gpu_environment(strategy="ddp"):
+    """멀티 GPU 환경 설정 (run_etu_multi_h200.py에서 가져옴)"""
+    print(f"🔧 멀티 GPU 환경 설정: {strategy}")
+    
+    if strategy == "ddp":
+        # Distributed Data Parallel
+        os.environ["MASTER_ADDR"] = "localhost"
+        os.environ["MASTER_PORT"] = "12355"
+        os.environ["WORLD_SIZE"] = str(torch.cuda.device_count())
+        os.environ["RANK"] = "0"
+        
+    elif strategy == "fsdp":
+        # Fully Sharded Data Parallel
+        os.environ["FSDP_CONFIG"] = "true"
+        os.environ["FSDP_CPU_OFFLOAD"] = "false"
+        
+    elif strategy == "tensor_parallel":
+        # Tensor Parallelism
+        os.environ["TP_CONFIG"] = "true"
+        os.environ["TP_SIZE"] = str(torch.cuda.device_count())
+        
+    print(f"✅ {strategy.upper()} 환경 설정 완료")
+
+def get_dataset_mapping():
+    """데이터셋 별칭을 실제 경로로 매핑"""
+    return {
+        # HuggingFace 경로
+        "bio:forget": "cais/wmdp-bio-forget-corpus",
+        "bio:retain": "cais/wmdp-corpora:bio-retain-corpus", 
+        "cyber:forget": "cais/wmdp-corpora:cyber-forget-corpus",
+        "cyber:retain": "cais/wmdp-corpora:cyber-retain-corpus",
+        "wikitext": "wikitext",
+        
+        # 로컬 경로
+        "local:cyber-forget": "./datasets/cyber-forget",
+        "local:cyber-retain": "./datasets/cyber-retain",
+        "local:bio-forget": "./datasets/bio-forget",
+        "local:bio-retain": "./datasets/bio-retain",
+        "local:wikitext": "./datasets/wikitext",
+    }
+
+def calculate_optimal_batch_size(model_name_or_path):
+    """모델 크기에 따른 최적 배치 크기 계산 (run_etu_multi_h200.py에서 가져옴)"""
+    gpu_count = torch.cuda.device_count()
+    if gpu_count == 0:
+        return 8  # 기본값
+    
+    # GPU 메모리 정보 수집
+    device_memories = []
+    for i in range(gpu_count):
+        props = torch.cuda.get_device_properties(i)
+        memory_gb = props.total_memory / 1024**3
+        device_memories.append(memory_gb)
+    
+    total_gpu_memory = sum(device_memories)
+    available_memory = total_gpu_memory * 0.8  # 80% 사용
+    
+    # 모델 크기별 최적 배치 크기
+    if "70b" in model_name_or_path.lower():
+        estimated_size = 70
+        optimal_batch = 16   # 70B 모델
+    elif "30b" in model_name_or_path.lower():
+        estimated_size = 30
+        optimal_batch = 32   # 30B 모델
+    elif "13b" in model_name_or_path.lower():
+        estimated_size = 13
+        optimal_batch = 64   # 13B 모델
+    elif "7b" in model_name_or_path.lower():
+        estimated_size = 7
+        optimal_batch = 128  # 7B 모델
+    else:
+        estimated_size = 7
+        optimal_batch = 128  # 기본값
+    
+    # GPU 메모리 제약 고려
+    memory_constrained_batch = int(available_memory / (estimated_size * 2))
+    final_batch = min(optimal_batch, memory_constrained_batch)
+    
+    return final_batch
+
+def resolve_dataset_paths(forget_corpora, retain_corpora):
+    """데이터셋 별칭을 실제 경로로 변환"""
+    mapping = get_dataset_mapping()
+    
+    def resolve_corpus(corpus):
+        if corpus in mapping:
+            return mapping[corpus]
+        return corpus
+    
+    # 단일 문자열인 경우 리스트로 변환
+    if isinstance(forget_corpora, str):
+        if "," in forget_corpora:
+            # 쉼표로 구분된 여러 데이터셋
+            forget_paths = [resolve_corpus(c.strip()) for c in forget_corpora.split(",")]
+        else:
+            # 단일 데이터셋
+            forget_paths = [resolve_corpus(forget_corpora.strip())]
+    else:
+        # 이미 리스트인 경우
+        forget_paths = [resolve_corpus(c.strip()) for c in forget_corpora]
+    
+    if isinstance(retain_corpora, str):
+        if "," in retain_corpora:
+            # 쉼표로 구분된 여러 데이터셋
+            retain_paths = [resolve_corpus(c.strip()) for c in retain_corpora.split(",")]
+        else:
+            # 단일 데이터셋
+            retain_paths = [resolve_corpus(retain_corpora.strip())]
+    else:
+        # 이미 리스트인 경우
+        retain_paths = [resolve_corpus(c.strip()) for c in retain_corpora]
+    
+    return forget_paths, retain_paths  # 리스트 반환
+
+def get_h200_optimized_args():
+    """H200 환경에 최적화된 기본 인자"""
+    parser = argparse.ArgumentParser(description="ETU H200 GPU 최적화 실행")
+    
+    # GPU 선택 및 전략
+    parser.add_argument("--gpu_id", type=int, default=0, 
+                       help="사용할 GPU ID (기본값: 0)")
+    parser.add_argument("--multi_gpu", action="store_true",
+                       help="여러 GPU 사용 (병렬 처리)")
+    parser.add_argument("--strategy", type=str, default="ddp",
+                       choices=["ddp", "fsdp", "tensor_parallel"],
+                       help="멀티 GPU 전략 (기본값: ddp)")
+    parser.add_argument("--batch_size_per_gpu", type=int, default=8,
+                       help="GPU당 배치 크기 (기본값: 8)")
+    
+    # H200 최적화 설정
+    parser.add_argument("--batch_size", type=int, default=16,
+                       help="배치 크기 (H200 권장: 16, 메모리 절약)")
+    parser.add_argument("--max_num_batches", type=int, default=100,
+                       help="최대 배치 수 (H200 권장: 100)")
+    parser.add_argument("--frozen_on_cpu", action="store_true", default=True,
+                       help="frozen 모델을 CPU에 (메모리 절약을 위해 true 권장)")
+    
+    # LoRA 최적화
+    parser.add_argument("--use_lora", action="store_true", default=True,
+                       help="LoRA 사용 (H200 권장: true)")
+    parser.add_argument("--lora_r", type=int, default=512,
+                       help="LoRA rank (H200 권장: 512)")
+    parser.add_argument("--lora_alpha", type=int, default=1024,
+                       help="LoRA alpha (H200 권장: 1024)")
+    
+    # ETU 핵심 파라미터
+    parser.add_argument("--epsilon", type=float, default=0.05,
+                       help="억제 목표 ε (기본값: 0.05)")
+    parser.add_argument("--lambda_max", type=float, default=12.0,
+                       help="최대 λ 값 (기본값: 12.0)")
+    parser.add_argument("--lambda_update_freq", type=int, default=25,
+                       help="λ 업데이트 빈도 (기본값: 25)")
+    
+    # 데이터 설정
+    parser.add_argument("--forget_corpora", type=str, 
+                       default="./datasets/cyber-forget",
+                       help="forget할 도메인 (별칭: bio:forget, cyber:forget, 또는 실제 경로)")
+    parser.add_argument("--retain_corpora", type=str,
+                       default="./datasets/bio-retain",
+                       help="retain할 도메인 (별칭: bio:retain, cyber:retain, wikitext, 또는 실제 경로)")
+    
+    # 모델 설정
+    parser.add_argument("--model_name_or_path", type=str,
+                       default="HuggingFaceH4/zephyr-7b-beta",
+                       help="사용할 모델")
+    
+    # 성능 최적화
+    parser.add_argument("--deterministic", action="store_true",
+                       help="결정적 실행 (성능 약간 하락)")
+    parser.add_argument("--verbose", action="store_true", default=True,
+                       help="상세 로깅")
+    parser.add_argument("--gradient_accumulation_steps", type=int, default=4,
+                       help="그래디언트 누적 스텝 (기본값: 4)")
+    parser.add_argument("--mixed_precision", type=str, default="bf16",
+                       choices=["fp16", "bf16", "fp32"],
+                       help="혼합 정밀도 (기본값: bf16)")
+    parser.add_argument("--trust_remote_code", action="store_true",
+                       help="원격 코드 신뢰 (대용량 모델용)")
+    
+    # 추가 ETU 인자들
+    parser.add_argument("--lr", type=float, default=1e-5,
+                       help="학습률 (기본값: 1e-5)")
+    parser.add_argument("--num_epochs", type=int, default=1,
+                       help="에포크 수 (기본값: 1)")
+    parser.add_argument("--min_len", type=int, default=10,
+                       help="최소 시퀀스 길이 (기본값: 10)")
+    parser.add_argument("--max_len", type=int, default=512,
+                       help="최대 시퀀스 길이 (기본값: 512)")
+    
+    # LoRA 관련 인자들
+    parser.add_argument("--layer_id", type=int, default=7,
+                       help="단일 레이어 ID (기본값: 7)")
+    parser.add_argument("--layer_ids", type=str, default="5,6,7",
+                       help="LoRA 적용할 레이어 ID (쉼표로 구분, 기본값: 5,6,7)")
+    parser.add_argument("--param_ids", type=str, default="",
+                       help="LoRA 적용할 파라미터 ID (쉼표로 구분)")
+    parser.add_argument("--name_keywords", type=str, default="q_proj,k_proj,v_proj,o_proj",
+                       help="LoRA 적용할 모듈 이름 키워드 (기본값: q_proj,k_proj,v_proj,o_proj)")
+    parser.add_argument("--module_str", type=str, default="{model_name}.model.layers[{layer_id}]",
+                       help="LoRA 적용할 모듈 문자열 (기본값: {model_name}.model.layers[{layer_id}])")
+    
+    # V_S 관련 인자들
+    parser.add_argument("--use_pmi_vs", action="store_true", default=False,
+                       help="PMI 기반 V_S 사용")
+    parser.add_argument("--vocab_top_k", type=int, default=1000,
+                       help="V_S에 포함할 상위 토큰 수 (기본값: 1000)")
+    parser.add_argument("--vs_freq_rate", type=float, default=0.1,
+                       help="V_S 빈도 비율 (기본값: 0.1)")
+    parser.add_argument("--vs_abs_cap", type=int, default=1000,
+                       help="V_S 절대 상한 (기본값: 1000)")
+    parser.add_argument("--pmi_top_k", type=int, default=1000,
+                       help="PMI 상위 k 토큰 (기본값: 1000)")
+    parser.add_argument("--pmi_min_count", type=int, default=10,
+                       help="PMI 최소 카운트 (기본값: 10)")
+    parser.add_argument("--pmi_smoothing", type=float, default=0.1,
+                       help="PMI 스무딩 (기본값: 0.1)")
+    parser.add_argument("--pmi_max_batches", type=int, default=100,
+                       help="PMI 최대 배치 수 (기본값: 100)")
+    parser.add_argument("--vs_preview_k", type=int, default=10,
+                       help="V_S 미리보기 토큰 수 (기본값: 10)")
+    
+    # Lambda 관련 인자들
+    parser.add_argument("--allow_negative_lambda", action="store_true", default=False,
+                       help="음수 lambda 허용")
+    parser.add_argument("--lambda_eta", type=float, default=0.1,
+                       help="Lambda 학습률 (기본값: 0.1)")
+    
+    # Wilson 관련 인자들
+    parser.add_argument("--wilson_max_n", type=int, default=1000,
+                       help="Wilson 최대 n (기본값: 1000)")
+    
+    # 로깅 관련 인자들
+    parser.add_argument("--log_every", type=int, default=10,
+                       help="로그 출력 빈도 (기본값: 10)")
+    
+    # 출력 관련 인자들
+    parser.add_argument("--output_dir", type=str, default="",
+                       help="출력 디렉토리")
+    
+    # 시드 설정
+    parser.add_argument("--seed", type=int, default=None,
+                       help="랜덤 시드")
+    
+    # Retain 관련 인자들
+    parser.add_argument("--retain_weight", type=float, default=0.0,
+                       help="Retain 가중치 (기본값: 0.0)")
+    parser.add_argument("--retain_broadcast", action="store_true", default=False,
+                       help="Retain 브로드캐스트")
+    
+    # Preference 관련 인자들
+    parser.add_argument("--preference_weight", type=float, default=0.0,
+                       help="Preference 가중치 (기본값: 0.0)")
+    parser.add_argument("--pref_every", type=int, default=10,
+                       help="Preference 업데이트 빈도 (기본값: 10)")
+    parser.add_argument("--pref_format", type=str, default="dpo",
+                       help="Preference 형식 (기본값: dpo)")
+    parser.add_argument("--pref_beta", type=float, default=0.1,
+                       help="Preference beta (기본값: 0.1)")
+    parser.add_argument("--pref_margin", type=float, default=0.1,
+                       help="Preference margin (기본값: 0.1)")
+    parser.add_argument("--pref_max_len", type=int, default=512,
+                       help="Preference 최대 길이 (기본값: 512)")
+    
+    return parser.parse_args()
+
+def run_h200_optimized_etu():
+    """H200 최적화된 ETU 실행"""
+    try:
+        # H200 환경 설정
+        is_h200 = setup_h200_environment()
+        
+        # 인자 파싱
+        args = get_h200_optimized_args()
+        
+        # 최적 배치 크기 계산 (모델 크기 기반)
+        optimal_batch = calculate_optimal_batch_size(args.model_name_or_path)
+        if args.batch_size == 8:  # 기본값인 경우에만 자동 조정
+            args.batch_size = optimal_batch
+            print(f"🔧 모델 크기 기반 최적 배치 크기: {optimal_batch}")
+        
+        # GPU 설정
+        if args.multi_gpu:
+            gpu_ids = list(range(torch.cuda.device_count()))
+            os.environ["CUDA_VISIBLE_DEVICES"] = ",".join(map(str, gpu_ids))
+            print(f"🔄 멀티 GPU 모드: GPU {gpu_ids}")
+            
+            # 멀티 GPU 환경 설정
+            setup_multi_gpu_environment(args.strategy)
+        else:
+            os.environ["CUDA_VISIBLE_DEVICES"] = str(args.gpu_id)
+            print(f"🎯 단일 GPU 모드: GPU {args.gpu_id}")
+        
+        # H200 최적화 설정 적용
+        if is_h200:
+            print("🔧 H200 최적화 설정 적용:")
+            print(f"   - strategy: {args.strategy}")
+            print(f"   - batch_size: {args.batch_size}")
+            print(f"   - batch_size_per_gpu: {args.batch_size_per_gpu}")
+            print(f"   - frozen_on_cpu: {args.frozen_on_cpu}")
+            print(f"   - lora_r: {args.lora_r}")
+            print(f"   - lora_alpha: {args.lora_alpha}")
+            print(f"   - max_num_batches: {args.max_num_batches}")
+            print(f"   - mixed_precision: {args.mixed_precision}")
+            print(f"   - gradient_accumulation_steps: {args.gradient_accumulation_steps}")
+        
+        # ETU 실행 - 올바른 방식으로 호출
+        from etu.unlearn import run_etu
+        from etu.utils import load_model, get_data
+        
+        print("🚀 ETU 실행 시작...")
+        
+        # 모델 로딩 (메모리 최적화)
+        print("📥 모델 로딩 중...")
+        
+        # 단일 모델만 로드하고 복사본 생성 (메모리 절약)
+        base_model, tokenizer = load_model(args.model_name_or_path, train=True)
+        
+        # frozen_model은 CPU에 유지 (메모리 절약)
+        if args.frozen_on_cpu:
+            frozen_model = base_model
+            print("🔧 Frozen 모델을 CPU에 유지 (메모리 절약)")
+        else:
+            # GPU 메모리가 충분한 경우에만 GPU에 로드
+            try:
+                frozen_model = base_model
+                print("🔧 Frozen 모델을 GPU에 로드")
+            except torch.cuda.OutOfMemoryError:
+                print("⚠️  GPU 메모리 부족, frozen 모델을 CPU에 유지")
+                args.frozen_on_cpu = True
+                frozen_model = base_model
+        
+        updated_model = base_model
+        
+        # 데이터 로딩
+        print("📊 데이터 로딩 중...")
+        
+        # 데이터셋 별칭 해결
+        forget_paths, retain_paths = resolve_dataset_paths(
+            args.forget_corpora, args.retain_corpora
+        )
+        print(f"🔍 Forget 데이터셋: {forget_paths}")
+        print(f"🔍 Retain 데이터셋: {retain_paths}")
+        
+        # layer_ids를 layer_id와 동일하게 설정
+        if args.layer_id is not None:
+            args.layer_ids = str(args.layer_id)
+            print(f"🔧 Layer 설정: layer_id={args.layer_id}, layer_ids={args.layer_ids}")
+        
+        forget_data_list, retain_data_list = get_data(
+            forget_paths,
+            retain_paths,
+            min_len=args.min_len,
+            max_len=args.max_len,
+            batch_size=args.batch_size,
+        )
+        
+        # ETU 실행
+        run_etu(
+            updated_model,
+            frozen_model,
+            tokenizer,
+            forget_data_list,
+            retain_data_list,
+            args,
+        )
+        
+        print("✅ ETU 실행 완료!")
+        
+    except Exception as e:
+        print(f"❌ 오류 발생: {e}")
+        import traceback
+        traceback.print_exc()
+        sys.exit(1)
+
+def main():
+    """메인 함수"""
+    print("=== ETU H200 GPU 최적화 실행 ===")
+    
+    # H200 최적화된 ETU 실행
+    run_h200_optimized_etu()
+
+if __name__ == "__main__":
+    main() 
+
+
+
+python3 run_etu_h200.py \
   --multi_gpu \
   --strategy ddp \
   --forget_corpora "./datasets/cyber-forget" \
   --retain_corpora "./datasets/bio-retain" \
-  --batch_size 64 \
+  --batch_size 32 \
   --max_num_batches 50 \
   --layer_id 7 \
   --epsilon 0.05 \
   --lambda_max 12.0 \
   --verbose
 
-=== ETU H200 GPU 최적화 실행 ===
-🚀 H200 GPU 환경 설정 중...
-GPU 0: NVIDIA H200 (139.8 GB)
-GPU 1: NVIDIA H200 (139.8 GB)
-GPU 2: NVIDIA H200 (139.8 GB)
-GPU 3: NVIDIA H200 (139.8 GB)
-GPU 4: NVIDIA H200 (139.8 GB)
-GPU 5: NVIDIA H200 (139.8 GB)
-GPU 6: NVIDIA H200 (139.8 GB)
-GPU 7: NVIDIA H200 (139.8 GB)
-✅ H200 GPU 8개 감지됨
-🔄 멀티 GPU 모드: GPU [0, 1, 2, 3, 4, 5, 6, 7]
-🔧 멀티 GPU 환경 설정: ddp
-✅ DDP 환경 설정 완료
-🔧 H200 최적화 설정 적용:
-   - strategy: ddp
-   - batch_size: 64
-   - batch_size_per_gpu: 8
-   - frozen_on_cpu: False
-   - lora_r: 512
-   - lora_alpha: 1024
-   - max_num_batches: 50
-   - mixed_precision: bf16
-   - gradient_accumulation_steps: 4
-🚀 ETU 실행 시작...
-📥 모델 로딩 중...
-Loading checkpoint shards: 100%|████████████████████████████████████████████| 8/8 [00:08<00:00,  1.10s/it]
-Loading checkpoint shards: 100%|███████████████████████████████████████████| 8/8 [00:00<00:00, 374.38it/s]
-❌ 오류 발생: CUDA out of memory. Tried to allocate 112.00 MiB. GPU 0 has a total capacity of 139.81 GiB of which 84.12 MiB is free. Process 1117159 has 127.15 GiB memory in use. Including non-PyTorch memory, this process has 12.56 GiB memory in use. Of the allocated memory 12.05 GiB is allocated by PyTorch, and 1.56 MiB is reserved by PyTorch but unallocated. If reserved but unallocated memory is large try setting PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True to avoid fragmentation.  See documentation for Memory Management  (https://pytorch.org/docs/stable/notes/cuda.html#environment-variables)
-Traceback (most recent call last):
-  File "/data/aiuser3/ETU/run_etu_h200.py", line 366, in run_h200_optimized_etu
-    updated_model, tokenizer = load_model(args.model_name_or_path, train=True)
-                               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/data/aiuser3/ETU/etu/utils.py", line 512, in load_model
-    model.to("cuda")
-  File "/data/aiuser3/LLM_EvalPipeline_test/.venv/lib/python3.12/site-packages/transformers/modeling_utils.py", line 4333, in to
-    return super().to(*args, **kwargs)
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/data/aiuser3/LLM_EvalPipeline_test/.venv/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1371, in to
-    return self._apply(convert)
-           ^^^^^^^^^^^^^^^^^^^^
-  File "/data/aiuser3/LLM_EvalPipeline_test/.venv/lib/python3.12/site-packages/torch/nn/modules/module.py", line 930, in _apply
-    module._apply(fn)
-  File "/data/aiuser3/LLM_EvalPipeline_test/.venv/lib/python3.12/site-packages/torch/nn/modules/module.py", line 930, in _apply
-    module._apply(fn)
-  File "/data/aiuser3/LLM_EvalPipeline_test/.venv/lib/python3.12/site-packages/torch/nn/modules/module.py", line 930, in _apply
-    module._apply(fn)
-  [Previous line repeated 2 more times]
-  File "/data/aiuser3/LLM_EvalPipeline_test/.venv/lib/python3.12/site-packages/torch/nn/modules/module.py", line 957, in _apply
-    param_applied = fn(param)
-                    ^^^^^^^^^
-  File "/data/aiuser3/LLM_EvalPipeline_test/.venv/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1357, in convert
-    return t.to(
-           ^^^^^
-torch.OutOfMemoryError: CUDA out of memory. Tried to allocate 112.00 MiB. GPU 0 has a total capacity of 139.81 GiB of which 84.12 MiB is free. Process 1117159 has 127.15 GiB memory in use. Including non-PyTorch memory, this process has 12.56 GiB memory in use. Of the allocated memory 12.05 GiB is allocated by PyTorch, and 1.56 MiB is reserved by PyTorch but unallocated. If reserved but unallocated memory is large try setting PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True to avoid fragmentation.  See documentation for Memory Management  (https://pytorch.org/docs/stable/notes/cuda.html#environment-variables)
+
+    
