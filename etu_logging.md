@@ -1,4 +1,4 @@
-  python3 - <<'PY'
+python3 - <<'PY'
   import inspect, etu.utils as U
   print("utils path:", U.__file__)
   print("adjust_lambda params:", list(inspect.signature(U.adjust_lambda).parameters))
@@ -7,7 +7,7 @@
 
 
 
-  python3 run_etu_h200.py \
+python3 run_etu_h200.py \
   --forget_corpora "./datasets/bio-forget" \
   --retain_corpora "./datasets/bio-retain" \
   --batch_size 8 \
