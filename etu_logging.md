@@ -1,3 +1,7 @@
+ huggingface-cli download Salesforce/wikitext --repo-type dataset --local-dir ./wikitext
+
+
+
 cd ETU && \
 export HUGGING_FACE_HUB_TOKEN="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" && \
 echo "🔑 토큰 설정 완료" && \
