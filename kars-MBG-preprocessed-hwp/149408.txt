@@ -1,0 +1,29 @@
+
+
+등록대수 총 464,128대(59개사) 중 ##(##개사)에 대한 BMS 현황(’24.6월 기준)  
+
+| 제작사 | 모델명(제작판매년도) | 판매대수 | 배터리셀 제조사 | 양극 소재 | 배터리 상시 이상감지 및 경고 전파 기능 탑재 여부 | 경고 전파 대상 및 전파 경로 방식 | 경고 전파 기능이 없는 경우 | 경고 전파 기능 탑재 시 | 주행 중 | 충전 중 | 주차 중 | 경고 전파 기능 탑재 가능 여부 | 무상장착(무상 업데이트) 가능 여부 | 무료 이용 가능 여부 | 무료 서비스 기간 |
+|--------|----------------------|----------|------------------|------------|--------------------------------------------------|----------------------------------|--------------------------|------------------------|---------|---------|---------|--------------------------|----------------------------------|------------------|----------------|
+| 벤츠 | EQC 400 4MATIC(2020-2022) | 976 | LG | NCM Graphite | O | (버스 슬립 (Bus-sleep) 모드인 경우)<br>(경고 전파 방법)<br>차량내 경고메시지<br>HV(High Voltage) 시스템의 오작동이 감지되면 차량은 계기반에 다양한 경고 메시지를 표시합니다. 이러한 경고는 주행 중 및 차량이 정차해 있을 때 계기반에 표시되지만, 차량이 일정 시간 동안 비활성 상태인 이후에 버스 슬립(Bus sleep) 모드로 진입 할 때 까지만 표시됩니다. 이러한 경고 메시지의 의미는 사용자 설명서에 설명되어 있습니다. 버스 슬립 모드 동안에는 계기반에 경고 메시지가 점등되지 않습니다.<br>Mercedes me 앱을 통한 경고메시지<br>Mercedes me 앱 사용자는 스마트폰에서 차량이 감지한 경고 메시지를 전달받을 수 있습니다. 중요 사항: 해당 서비스를 이용하기 위해 운전자는 Mercedes me 앱에 등록되어 있어야 하며, 차량이 Mercedes me 앱의 서비스를 처리하는 데 동의해야 하며 해당 차량과 연결되어 있어야 합니다. 또한 차량과 사용자의 스마트폰이 모두 모바일 네트워크에 접속되어 있어야 합니다. 소방서와의 직접적인 전화 메시지는 제공되지 않습니다. 또한 차량이 꺼지고 일정 시간 동안 비활성 상태로 유지 됨에 따라 버스 슬립(Bus sleep) 모드에 진입한 이후에는 계기반에 경고 메시지가 점등되지 않으며, Mercedes me 앱을 통해 메시지가 전송되지 않습니다. 차량이 버스 슬립 모드로 진입되는 시기는 개별 요인에 따라 달라집니다. 무엇보다도 차량을 잠가야 합니다. BEV(Battery Electric Vehicle) 모델은 충전 중에 버스 슬립 모드로 전환되지 않습니다.<br>(경고 전파 경로)<br>제작사를 경유하여 소유자 전파 | X | 해당사항 없음 | 무료 | 영구 |
+| 벤츠 | EQA250(2021-2024) | 1799 | CATL | NCM Graphite | O | O | O | O | O | O | O | O | O | O | O | O |
+| 벤츠 | EQS450 +(2021-2024) | 906 | CATL | NCM Graphite | O | O | O | O | O | O | O | O | O | O | O | O |
+| 벤츠 | EQC400 4MATIC(2022-2024) | 89 | LG | NCM Graphite | O | O | O | O | O | O | O | O | O | O | O | O |
+| 벤츠 | EQS450 4MATIC(2022-2024) | 913 | CATL | NCM Graphite | O | O | O | O | O | O | O | O | O | O | O | O |
+| 벤츠 | EQS350(2022-2023) | 769 | Farasis Energy | NCM Graphite | O | O | O | O | O | O | O | O | O | O | O | O |
+| 벤츠 | EQB300 4MATIC(2023-2024) | 3337 | SK on | NCM Graphite | O | O | O | O | O | O | O | O | O | O | O | O |
+| 벤츠 | EQA250(2023-2024) | 592 | CATL | NCM Graphite | O | O | O | O | O | O | O | O | O | O | O | O |
+| 벤츠 | EQE350 +(2023-2024) | 2115 | Farasis Energy | NCM Graphite | O | O | O | O | O | O | O | O | O | O | O | O |
+| 벤츠 | EQE350 4MATIC(2023-2024) | 1152 | Farasis Energy | NCM Graphite | O | O | O | O | O | O | O | O | O | O | O | O |
+| 벤츠 | EQE300(2023-2024) | 265 | CATL | NCM Graphite | O | O | O | O | O | O | O | O | O | O | O | O |
+| 벤츠 | EQS580 4MATIC SUV(2023-2024) | 754 | CATL | NCM Graphite | O | O | O | O | O | O | O | O | O | O | O | O |
+| 벤츠 | EQS53 4MATIC +(2022-2024) | 147 | CATL | NCM Graphite | O | O | O | O | O | O | O | O | O | O | O | O |
+| 벤츠 | EQE53 4MATIC +(2023-2024) | 181 | Farasis Energy | NCM Graphite | O | O | O | O | O | O | O | O | O | O | O | O |
+| 벤츠 | EQS450 4MATIC SUV(2023-2024) | 859 | CATL | NCM Graphite | O | O | O | O | O | O | O | O | O | O | O | O |
+| 벤츠 | EQS450 +(2023-2024) | 276 | CATL | NCM Graphite | O | O | O | O | O | O | O | O | O | O | O | O |
+| 벤츠 | EQA250(2023-2024) | 1990 | SK on | NCM Graphite | O | O | O | O | O | O | O | O | O | O | O | O |
+| 벤츠 | EQE350 4MATIC SUV(2023-2024) | 600 | CATL | NCM Graphite | O | O | O | O | O | O | O | O | O | O | O | O |
+| 벤츠 | EQE500 4MATIC SUV(2023-2024) | 1146 | Farasis Energy | NCM Graphite | O | O | O | O | O | O | O | O | O | O | O | O |
+| 벤츠 | EQE 350 4MATIC(2023-2024) | 117 | Farasis Energy | NCM Graphite | O | O | O | O | O | O | O | O | O | O | O | O |
+| 벤츠 | EQE 350 +(2023-2024) | 537 | Farasis Energy | NCM Graphite | O | O | O | O | O | O | O | O | O | O | O | O |
+| 벤츠 | EQA 250(2024) | 239 | SK on | NCM Graphite | O | O | O | O | O | O | O | O | O | O | O | O |
+| 벤츠 | EQB 300 4MATIC(2024) | 145 | SK on | NCM Graphite | O | O | O | O | O | O | O | O | O | O | O | O |
