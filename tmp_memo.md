@@ -4,3 +4,4 @@ C:\Users\sungwon.chae\Desktop\kars-workspace
 
 아 그리구 저거 테케가 무조건 답이 있는 경우만 봐야하는거라...,...,., 혹시 시간나면 저 쿼리 돌렸을때 무조건 뭐가 나온다는것만 좀 보장 가능할까요ㅠ 
 
+The terminal process failed to launch: Access was denied to the path containing your executable "C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe". Manage and change your permissions to get this to work.
