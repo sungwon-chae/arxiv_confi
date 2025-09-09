@@ -51,8 +51,10 @@ Tue Sep  9 13:08:12 2025
 +-----------------------------------------------------------------------------------------+
 aiuser3@ai-smartlaw:~$ lsof -i -P -n | grep LISTEN
 code-fabd 2359204 aiuser3    9u  IPv4 69758669      0t0  TCP 127.0.0.1:41255 (LISTEN)
-aiuser3@ai-smartlaw:~$ 
-
+aiuser3@ai-smartlaw:~$ ps -ef | grep -E "vllm|api_server|openai" | grep -v grep
+aiuser1  1739450  405874  0 Sep05 pts/13   00:00:14 /data/aiuser1/my_env/bin/python3.11 /data/aiuser1/my_env/bin/vllm serve /data/models_ckpt/Qwen3-32B --port 8124 --api-key token-abc123 --trust-remote-code --dtype bfloat16 --gpu-memory-utilization 0.9 --enable-auto-tool-choice --tool-call-parser hermes --tensor-parallel-size 2
+aiuser1  1739881  405874  0 Sep05 pts/13   00:02:03 /data/aiuser1/my_env/bin/python3.11 /data/aiuser1/my_env/bin/vllm serve /data/models/Qwen3-32B --port 8124 --api-key token-abc123 --trust-remote-code --dtype bfloat16 --gpu-memory-utilization 0.9 --enable-auto-tool-choice --tool-call-parser hermes --tensor-parallel-size 2
+aiuser1  1744154 1741765  0 Sep05 pts/17   00:01:57 /data/aiuser1/my_env_py312/bin/python3 /data/aiuser1/my_env_py312/bin/vllm serve google/gemma-3-270m-it --port 8125 --api-key token-abc123 --trust-remote-code --dtype bfloat16 --gpu-memory-utilization 0.9 --tensor-parallel-size 1
 
 C:\Users\sungwon.chae\Desktop\kars-workspace
 
