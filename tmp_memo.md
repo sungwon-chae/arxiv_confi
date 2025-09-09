@@ -37,7 +37,8 @@ curl -X POST "http://10.10.190.10:8124/v1/chat/completions" \
     "temperature": 0.2
   }'
 
-curl -H "Authorization: Bearer token-abc123" http://10.10.190.10:8124/v1/models
+aiuser3@ai-smartlaw:~$ curl -H "Authorization: Bearer token-abc123" http://10.10.190.10:8124/v1/models                  curl -H "Authorization: Bearer token-abc123" http://10.10.190.10:8124/v1/models
+{"object":"list","data":[{"id":"/data/models/Qwen3-32B","object":"model","created":1757391572,"owned_by":"vllm","root":"/data/models/Qwen3-32B","parent":null,"max_model_len":40960,"permission":[{"id":"modelperm-ae94014135cf43528e414c2235a52f82","object":"model_permission","created":1757391572,"allow_create_engine":false,"allow_sampling":true,"allow_logprobs":true,"allow_search_indices":false,"allow_view":true,"allow_fine_tuning":false,"organization":"*","group":null,"is_blocking":false}]}]}aiuser3@ai-smartlaw:~$ 
 
 
 C:\Users\sungwon.chae\Desktop\kars-workspace
