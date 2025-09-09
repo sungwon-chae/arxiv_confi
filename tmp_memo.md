@@ -37,6 +37,15 @@ curl -X POST "http://10.10.190.10:8124/v1/chat/completions" \
     "temperature": 0.2
   }'
 
+aiuser3@ai-smartlaw:~$ curl -X POST "http://10.10.190.10:8124/v1/chat/completions" \
+  -H "Authorization: Bearer token-abc123" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "Qwen3-32B",
+    "messages": [{"role":"user","content":"Hello Qwen"}],
+    "temperature": 0.2
+  }'
+{"object":"error","message":"The model `Qwen3-32B` does not exist.","type":"NotFoundError","param":null,"code":404}aiuser3@ai-smartlaw:~$ 
 
 
 C:\Users\sungwon.chae\Desktop\kars-workspace
