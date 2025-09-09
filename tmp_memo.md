@@ -1,3 +1,9 @@
+tr '\0' ' ' < /proc/1739450/cmdline | sed 's/ /\n/g' | grep -E -- '--port|--host|--model'
+
+ss -ltn | grep 8124
+
+hostname -I | awk '{print $1}'
+
 aiuser3@ai-smartlaw:~$ nvidia-smi
 Tue Sep  9 13:08:12 2025       
 +-----------------------------------------------------------------------------------------+
