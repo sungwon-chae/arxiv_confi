@@ -1,11 +1,11 @@
 Qwen 접속 정보 드립니다.
 
 - Base URL: http://10.10.190.10:8124
-- 인증 Key: token-abc123  (기존과 동일)
+- 인증 Key: token-abc123 (기존과 동일)
 - Endpoint: /v1/chat/completions
-- Model: Qwen3-32B
+- Model ID: /data/models/Qwen3-32B
 
-간단한 테스트용 예제 코드도 함께 공유드립니다.
+아래 Python/curl 예제 코드 참고하시면 됩니다.
 
 ### 샘플 코드 (Python)
 
@@ -17,7 +17,7 @@ API_KEY = "token-abc123"
 url = f"{API_BASE}/v1/chat/completions"
 headers = {"Authorization": f"Bearer {API_KEY}", "Content-Type": "application/json"}
 data = {
-    "model": "Qwen3-32B",
+    "model": "/data/models/Qwen3-32B",   # 실제 모델 ID
     "messages": [{"role": "user", "content": "Hello Qwen"}],
     "temperature": 0.2,
 }
@@ -32,7 +32,7 @@ curl -X POST "http://10.10.190.10:8124/v1/chat/completions" \
   -H "Authorization: Bearer token-abc123" \
   -H "Content-Type: application/json" \
   -d '{
-    "model": "Qwen3-32B",
+    "model": "/data/models/Qwen3-32B",
     "messages": [{"role":"user","content":"Hello Qwen"}],
     "temperature": 0.2
   }'
