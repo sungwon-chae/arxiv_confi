@@ -1,18 +1,41 @@
-aiuser3@ai-smartlaw:~$ lsof -i -P -n | grep LISTEN
-code-fabd 2359204 aiuser3    9u  IPv4 69758669      0t0  TCP 127.0.0.1:41255 (LISTEN)
-aiuser3@ai-smartlaw:~$ ps -ef | grep -E "vllm|api_server|openai" | grep -v grep
-aiuser1  1739450  405874  0 Sep05 pts/13   00:00:14 /data/aiuser1/my_env/bin/python3.11 /data/aiuser1/my_env/bin/vllm serve /data/models_ckpt/Qwen3-32B --port 8124 --api-key token-abc123 --trust-remote-code --dtype bfloat16 --gpu-memory-utilization 0.9 --enable-auto-tool-choice --tool-call-parser hermes --tensor-parallel-size 2
-aiuser1  1739881  405874  0 Sep05 pts/13   00:02:03 /data/aiuser1/my_env/bin/python3.11 /data/aiuser1/my_env/bin/vllm serve /data/models/Qwen3-32B --port 8124 --api-key token-abc123 --trust-remote-code --dtype bfloat16 --gpu-memory-utilization 0.9 --enable-auto-tool-choice --tool-call-parser hermes --tensor-parallel-size 2
-aiuser1  1744154 1741765  0 Sep05 pts/17   00:01:57 /data/aiuser1/my_env_py312/bin/python3 /data/aiuser1/my_env_py312/bin/vllm serve google/gemma-3-270m-it --port 8125 --api-key token-abc123 --trust-remote-code --dtype bfloat16 --gpu-memory-utilization 0.9 --tensor-parallel-size 1
-aiuser3@ai-smartlaw:~$ tr '\0' ' ' < /proc/1739450/cmdline | sed 's/ /\n/g' | grep -E -- '--port|--host|--model'
---port
-aiuser3@ai-smartlaw:~$ ss -ltn | grep 8124
-LISTEN 0      2048         0.0.0.0:8124       0.0.0.0:*          
-aiuser3@ai-smartlaw:~$ hostname -I | awk '{print $1}'
-10.10.190.10
-aiuser3@ai-smartlaw:~$ 
+Qwen 접속 정보 드립니다.
 
+- Base URL: http://10.10.190.10:8124
+- 인증 Key: token-abc123  (기존과 동일)
+- Endpoint: /v1/chat/completions
+- Model: Qwen3-32B
 
+간단한 테스트용 예제 코드도 함께 공유드립니다.
+
+### 샘플 코드 (Python)
+
+import requests
+
+API_BASE = "http://10.10.190.10:8124"
+API_KEY = "token-abc123"
+
+url = f"{API_BASE}/v1/chat/completions"
+headers = {"Authorization": f"Bearer {API_KEY}", "Content-Type": "application/json"}
+data = {
+    "model": "Qwen3-32B",
+    "messages": [{"role": "user", "content": "Hello Qwen"}],
+    "temperature": 0.2,
+}
+
+resp = requests.post(url, headers=headers, json=data, timeout=30)
+print(resp.status_code)
+print(resp.json())
+
+### 샘플 (curl)
+
+curl -X POST "http://10.10.190.10:8124/v1/chat/completions" \
+  -H "Authorization: Bearer token-abc123" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "Qwen3-32B",
+    "messages": [{"role":"user","content":"Hello Qwen"}],
+    "temperature": 0.2
+  }'
 
 
 
