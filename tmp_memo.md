@@ -1,66 +1,20 @@
-tr '\0' ' ' < /proc/1739450/cmdline | sed 's/ /\n/g' | grep -E -- '--port|--host|--model'
-
-ss -ltn | grep 8124
-
-hostname -I | awk '{print $1}'
-
-aiuser3@ai-smartlaw:~$ nvidia-smi
-Tue Sep  9 13:08:12 2025       
-+-----------------------------------------------------------------------------------------+
-| NVIDIA-SMI 570.158.01             Driver Version: 570.158.01     CUDA Version: 12.8     |
-|-----------------------------------------+------------------------+----------------------+
-| GPU  Name                 Persistence-M | Bus-Id          Disp.A | Volatile Uncorr. ECC |
-| Fan  Temp   Perf          Pwr:Usage/Cap |           Memory-Usage | GPU-Util  Compute M. |
-|                                         |                        |               MIG M. |
-|=========================================+========================+======================|
-|   0  NVIDIA H200                    Off |   00000000:0A:00.0 Off |                    0 |
-| N/A   30C    P0            121W /  700W |  130429MiB / 143771MiB |      0%      Default |
-|                                         |                        |             Disabled |
-+-----------------------------------------+------------------------+----------------------+
-|   1  NVIDIA H200                    Off |   00000000:18:00.0 Off |                    0 |
-| N/A   28C    P0            121W /  700W |  130429MiB / 143771MiB |      0%      Default |
-|                                         |                        |             Disabled |
-+-----------------------------------------+------------------------+----------------------+
-|   2  NVIDIA H200                    Off |   00000000:3B:00.0 Off |                    0 |
-| N/A   24C    P0             74W /  700W |       4MiB / 143771MiB |      0%      Default |
-|                                         |                        |             Disabled |
-+-----------------------------------------+------------------------+----------------------+
-|   3  NVIDIA H200                    Off |   00000000:44:00.0 Off |                    0 |
-| N/A   31C    P0            118W /  700W |  130003MiB / 143771MiB |      0%      Default |
-|                                         |                        |             Disabled |
-+-----------------------------------------+------------------------+----------------------+
-|   4  NVIDIA H200                    Off |   00000000:87:00.0 Off |                    0 |
-| N/A   27C    P0             77W /  700W |       4MiB / 143771MiB |      0%      Default |
-|                                         |                        |             Disabled |
-+-----------------------------------------+------------------------+----------------------+
-|   5  NVIDIA H200                    Off |   00000000:90:00.0 Off |                    0 |
-| N/A   26C    P0             78W /  700W |       4MiB / 143771MiB |      0%      Default |
-|                                         |                        |             Disabled |
-+-----------------------------------------+------------------------+----------------------+
-|   6  NVIDIA H200                    Off |   00000000:B9:00.0 Off |                    0 |
-| N/A   25C    P0             76W /  700W |       4MiB / 143771MiB |      0%      Default |
-|                                         |                        |             Disabled |
-+-----------------------------------------+------------------------+----------------------+
-|   7  NVIDIA H200                    Off |   00000000:C2:00.0 Off |                    0 |
-| N/A   27C    P0             76W /  700W |       4MiB / 143771MiB |      0%      Default |
-|                                         |                        |             Disabled |
-+-----------------------------------------+------------------------+----------------------+
-                                                                                         
-+-----------------------------------------------------------------------------------------+
-| Processes:                                                                              |
-|  GPU   GI   CI              PID   Type   Process name                        GPU Memory |
-|        ID   ID                                                               Usage      |
-|=========================================================================================|
-|    0   N/A  N/A         1740209      C   ...aiuser1/my_env/bin/python3.11      13042... |
-|    1   N/A  N/A         1740210      C   ...aiuser1/my_env/bin/python3.11      13042... |
-|    3   N/A  N/A         1744542      C   VLLM::EngineCore                      12999... |
-+-----------------------------------------------------------------------------------------+
 aiuser3@ai-smartlaw:~$ lsof -i -P -n | grep LISTEN
 code-fabd 2359204 aiuser3    9u  IPv4 69758669      0t0  TCP 127.0.0.1:41255 (LISTEN)
 aiuser3@ai-smartlaw:~$ ps -ef | grep -E "vllm|api_server|openai" | grep -v grep
 aiuser1  1739450  405874  0 Sep05 pts/13   00:00:14 /data/aiuser1/my_env/bin/python3.11 /data/aiuser1/my_env/bin/vllm serve /data/models_ckpt/Qwen3-32B --port 8124 --api-key token-abc123 --trust-remote-code --dtype bfloat16 --gpu-memory-utilization 0.9 --enable-auto-tool-choice --tool-call-parser hermes --tensor-parallel-size 2
 aiuser1  1739881  405874  0 Sep05 pts/13   00:02:03 /data/aiuser1/my_env/bin/python3.11 /data/aiuser1/my_env/bin/vllm serve /data/models/Qwen3-32B --port 8124 --api-key token-abc123 --trust-remote-code --dtype bfloat16 --gpu-memory-utilization 0.9 --enable-auto-tool-choice --tool-call-parser hermes --tensor-parallel-size 2
 aiuser1  1744154 1741765  0 Sep05 pts/17   00:01:57 /data/aiuser1/my_env_py312/bin/python3 /data/aiuser1/my_env_py312/bin/vllm serve google/gemma-3-270m-it --port 8125 --api-key token-abc123 --trust-remote-code --dtype bfloat16 --gpu-memory-utilization 0.9 --tensor-parallel-size 1
+aiuser3@ai-smartlaw:~$ tr '\0' ' ' < /proc/1739450/cmdline | sed 's/ /\n/g' | grep -E -- '--port|--host|--model'
+--port
+aiuser3@ai-smartlaw:~$ ss -ltn | grep 8124
+LISTEN 0      2048         0.0.0.0:8124       0.0.0.0:*          
+aiuser3@ai-smartlaw:~$ hostname -I | awk '{print $1}'
+10.10.190.10
+aiuser3@ai-smartlaw:~$ 
+
+
+
+
 
 C:\Users\sungwon.chae\Desktop\kars-workspace
 
