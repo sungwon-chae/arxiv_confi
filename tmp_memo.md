@@ -1,75 +1,194 @@
-(.venv) min.choi10@wss-195:/raid1/workspace/kars-agent/weaviate-mcp/tmp_sungwon_chae$ python test_extract_value_tool_modified.py 
-🚀 Weaviate MCP 도구 테스트 시작
+#!/usr/bin/env python3
+"""
+벡터DB 데이터 구조 및 내용 조회 스크립트
+실제 데이터를 확인해서 테스트 쿼리 작성에 활용
+"""
 
-2025-09-12 18:15:17,036 - mcp_tools - INFO - Weaviate MCP 도구 초기화 완료
-2025-09-12 18:15:17,453 - httpx - INFO - HTTP Request: POST http://10.10.190.1:8124/v1/chat/completions "HTTP/1.1 200 OK"
-Test Query Response:  ChatCompletion(id='chatcmpl-36dfd21cb4214d8eb18132b17b6850dd', choices=[Choice(finish_reason='length', index=0, logprobs=None, message=ChatCompletionMessage(content='<think>\nOkay, the user just said "hi', refusal=None, role='assistant', annotations=None, audio=None, function_call=None, tool_calls=[], reasoning_content=None), stop_reason=None)], created=1757668522, model='/data/models_ckpt/Qwen3-32B', object='chat.completion', service_tier=None, system_fingerprint=None, usage=CompletionUsage(completion_tokens=10, prompt_tokens=10, total_tokens=20, completion_tokens_details=None, prompt_tokens_details=None), prompt_logprobs=None)
-✅ OpenAI 클라이언트 설정 완료
-🔍 extract_filter_from_query 도구 테스트 시작 (MBG 실제 데이터 기반)
+import asyncio
+import sys
+import os
+from pathlib import Path
 
-📋 테스트 목적:
-  1. Filter 자동 추출 검증
-  2. 벡터DB에서 관련 문서 검색 확인
-  3. 실제 MBG 데이터 기반 GT 검증
-  4. 유사도 기반 검색 성능 확인
+# 현재 디렉토리를 Python 경로에 추가
+current_dir = Path(__file__).parent
+sys.path.insert(0, str(current_dir))
 
-📋 FilterExtractionResult 필드:
-  - custodian: 보관자
-  - ori_file_name: 원본 파일명
-  - s_created_date: 생성일
-  - sent_date: 발송일
-  - from_name: 발신자 이름
-  - to_name: 수신자 이름
-  - cc: 참조자 이름
-  - bcc: 숨은참조자 이름
-  - last_author: 최종 작성자
-  - extension: 파일 확장자
+from mcp_tools import WeaviateMCPTools
 
-테스트 케이스 1: Lee Sang-kuk이 언급된 모든 이메일을 찾아주세요
-------------------------------------------------------------
-2025-09-12 18:15:17,471 - mcp_tools - INFO - 🔍 필터 추출 시작: 'Lee Sang-kuk이 언급된 모든 이메일을 찾아주세요'
-2025-09-12 18:15:18,968 - httpx - INFO - HTTP Request: POST http://10.10.190.1:8124/v1/chat/completions "HTTP/1.1 200 OK"
-2025-09-12 18:15:18,970 - kars_db - INFO - 🚀 RAG 벡터 데이터베이스 초기화 시작
-2025-09-12 18:15:18,970 - simple_manager - INFO - Weaviate URL: http://10.10.150.195:8080
-2025-09-12 18:15:18,970 - simple_manager - INFO - OpenAI Base URL: http://10.10.190.1:8125
-2025-09-12 18:15:18,970 - kars_db - INFO - ✅ VectorDB 매니저 초기화 완료
-2025-09-12 18:15:19,018 - httpx - INFO - HTTP Request: GET http://10.10.190.1:8125/v1/models "HTTP/1.1 200 OK"
-2025-09-12 18:15:19,019 - weaviate_db - INFO - ✅ vLLM 서버에서 모델명 가져옴: /data/models_ckpt/bge-m3
-2025-09-12 18:15:19,034 - httpx - INFO - HTTP Request: POST http://10.10.190.1:8125/v1/embeddings "HTTP/1.1 200 OK"
-2025-09-12 18:15:19,038 - weaviate_db - INFO - ✅ 샘플 임베딩 생성 성공 (차원: 1024)
-2025-09-12 18:15:19,078 - httpx - INFO - HTTP Request: GET http://10.10.150.195:8080/v1/.well-known/openid-configuration "HTTP/1.1 404 Not Found"
-2025-09-12 18:15:19,105 - httpx - INFO - HTTP Request: GET http://10.10.150.195:8080/v1/meta "HTTP/1.1 200 OK"
-2025-09-12 18:15:21,140 - weaviate_db - INFO - ✅ Weaviate 클라이언트 연결 성공: http://10.10.150.195:8080
-2025-09-12 18:15:21,141 - weaviate_db - INFO - 📡 OpenAI Base URL (Python용): http://10.10.190.1:8125/v1
-2025-09-12 18:15:21,141 - weaviate_db - INFO - 📡 OpenAI Base URL (Weaviate용): http://10.10.190.1:8125
-2025-09-12 18:15:21,141 - weaviate_db - INFO - 🔧 동적 모델명: /data/models_ckpt/bge-m3
-2025-09-12 18:15:21,141 - simple_manager - INFO - DB 연결 초기화 완료
-2025-09-12 18:15:21,145 - httpx - INFO - HTTP Request: GET http://10.10.150.195:8080/v1/schema "HTTP/1.1 200 OK"
-2025-09-12 18:15:21,150 - httpx - INFO - HTTP Request: GET http://10.10.150.195:8080/v1/schema/DocumentChunk "HTTP/1.1 200 OK"
-2025-09-12 18:15:21,157 - httpx - INFO - HTTP Request: GET http://10.10.150.195:8080/v1/schema/EnronDocument "HTTP/1.1 200 OK"
-2025-09-12 18:15:21,158 - weaviate_db - INFO - 스키마 조회 완료: 2개 클래스
-2025-09-12 18:15:21,158 - simple_manager - WARNING - 클래스 매핑 파일이 없습니다. 기본 규칙을 사용합니다.
-2025-09-12 18:15:21,158 - simple_manager - INFO - 기존 클래스 등록: chunk_db -> DocumentChunk
-2025-09-12 18:15:21,158 - simple_manager - INFO - 기존 클래스 등록: enron_db -> EnronDocument
-2025-09-12 18:15:21,158 - simple_manager - INFO - 총 2개 DB에 클래스 등록 완료
-2025-09-12 18:15:21,158 - simple_manager - INFO -   chunk_db: ['DocumentChunk']
-2025-09-12 18:15:21,159 - simple_manager - INFO -   enron_db: ['EnronDocument']
-2025-09-12 18:15:21,161 - httpx - INFO - HTTP Request: GET http://10.10.150.195:8080/v1/schema "HTTP/1.1 200 OK"
-2025-09-12 18:15:21,166 - httpx - INFO - HTTP Request: GET http://10.10.150.195:8080/v1/schema/DocumentChunk "HTTP/1.1 200 OK"
-2025-09-12 18:15:21,170 - httpx - INFO - HTTP Request: GET http://10.10.150.195:8080/v1/schema/EnronDocument "HTTP/1.1 200 OK"
-2025-09-12 18:15:21,171 - weaviate_db - INFO - 스키마 조회 완료: 2개 클래스
-2025-09-12 18:15:21,171 - kars_db - INFO - 📊 사용 가능한 클래스들: ['DocumentChunk', 'EnronDocument']
-2025-09-12 18:15:21,171 - kars_db - INFO - ✅ 사용할 클래스명: DocumentChunk
-2025-09-12 18:15:21,171 - mcp_tools - INFO - ✅ RAG 데이터베이스 초기화 성공: kars_test
-2025-09-12 18:15:21,171 - mcp_tools - INFO - 🔍 데이터베이스에서 unique한 이메일 값들을 조회합니다.
-2025-09-12 18:15:21,171 - kars_db - INFO - 🔍 Unique 값 조회 시작: field=from_email, limit=50000
-2025-09-12 18:15:21,254 - kars_db - INFO - ✅ Unique 값 조회 완료: from_email 필드에서 3개 unique 값 발견
-2025-09-12 18:15:21,254 - kars_db - INFO - 🔍 Unique 값 조회 시작: field=to_email, limit=50000
-2025-09-12 18:15:21,326 - kars_db - INFO - ✅ Unique 값 조회 완료: to_email 필드에서 1개 unique 값 발견
-2025-09-12 18:15:21,326 - kars_db - INFO - 🔍 Unique 값 조회 시작: field=custodian, limit=50000
-2025-09-12 18:15:21,408 - kars_db - INFO - ✅ Unique 값 조회 완료: custodian 필드에서 1개 unique 값 발견
-2025-09-12 18:15:21,409 - kars_db - INFO - 🔍 Unique 값 조회 시작: field=last_author, limit=50000
-2025-09-12 18:15:21,478 - kars_db - INFO - ✅ Unique 값 조회 완료: last_author 필드에서 14개 unique 값 발견
-2025-09-12 18:15:21,479 - mcp_tools - INFO - ✅ Unique 이름들 조회 완료: from_email 3개, to_email 1개, custodian 1, total_last_author:  14
-2025-09-12 18:15:21,479 - mcp_tools - INFO - ✅ 필터 추출 완료: similarity 검색, 필터: custodian=None ori_file_name=None s_created_date=None sent_date=None from_email=None to_email=None cc=None bcc=None last_author=None extension=None
-❌ 오류 발생: 'error'
+
+async def explore_database():
+    """데이터베이스 구조 및 내용을 탐색합니다."""
+    
+    print("�� 벡터DB 데이터 구조 및 내용 탐색 시작\n")
+    
+    # 도구 인스턴스 생성
+    tools = WeaviateMCPTools()
+    
+    # 1. 스키마 정보 조회
+    print("📋 1단계: 데이터베이스 스키마 정보")
+    print("-" * 60)
+    
+    try:
+        # 스키마 조회 (간접적으로)
+        unique_names_result = await tools.get_unique_names()
+        
+        if unique_names_result['success']:
+            print("✅ 데이터베이스 연결 성공!")
+            print(f"  - from_email 개수: {unique_names_result['total_from_emails']}개")
+            print(f"  - to_email 개수: {unique_names_result['total_to_emails']}개")
+            print(f"  - custodian 개수: {unique_names_result['total_custodian']}개")
+            print(f"  - last_author 개수: {unique_names_result['total_last_author']}개")
+        else:
+            print(f"❌ 데이터베이스 연결 실패: {unique_names_result['error']}")
+            return
+            
+    except Exception as e:
+        print(f"❌ 스키마 조회 중 오류: {e}")
+        return
+    
+    # 2. 실제 데이터 샘플 조회
+    print("\n�� 2단계: 실제 데이터 샘플 조회")
+    print("-" * 60)
+    
+    # 다양한 필터로 샘플 데이터 조회
+    sample_queries = [
+        # 기본 조회
+        "모든 문서를 5개만 보여줘",
+        
+        # 발신자별 조회
+        "Jeong, Yeeun이 발신한 문서들을 보여줘",
+        "Park, Sep이 발신한 문서들을 보여줘",
+        
+        # 보관자별 조회
+        "세진 김이 보관한 문서들을 보여줘",
+        
+        # 파일 타입별 조회
+        "msg 파일들을 보여줘",
+        "pdf 파일들을 보여줘",
+        "csv 파일들을 보여줘",
+        
+        # 작성자별 조회
+        "Song, Jieun이 작성한 문서들을 보여줘",
+        "Ju, Hyeyeon이 작성한 문서들을 보여줘",
+    ]
+    
+    for i, query in enumerate(sample_queries, 1):
+        print(f"\n🔍 샘플 조회 {i}: {query}")
+        print("-" * 40)
+        
+        try:
+            result = await tools.extract_filter_from_query(query)
+            
+            if isinstance(result, str):
+                if result == "success":
+                    print("✅ 조회 성공!")
+                elif result == "error":
+                    print("❌ 조회 실패!")
+                else:
+                    print(f"⚠️ 예상치 못한 결과: {result}")
+            else:
+                # 딕셔너리인 경우 상세 정보 출력
+                if result.get("success"):
+                    print(f"✅ 조회 성공!")
+                    print(f"  - 검색 방식: {result.get('search_type', 'N/A')}")
+                    
+                    # 추출된 필터 출력
+                    if result.get("filters"):
+                        print(f"  - 추출된 필터:")
+                        for field, value in result["filters"].items():
+                            if value is not None:
+                                print(f"    * {field}: {value}")
+                    
+                    # 검색 결과 출력
+                    if result.get('search_result'):
+                        search_data = result['search_result']
+                        documents = search_data.get('documents', [])
+                        print(f"  - 검색된 문서 수: {len(documents)}개")
+                        
+                        # 첫 번째 문서의 상세 정보 출력
+                        if documents:
+                            first_doc = documents[0]
+                            print(f"\n  📄 첫 번째 문서 상세 정보:")
+                            print(f"    - 문서 ID: {first_doc.get('id', 'N/A')}")
+                            print(f"    - 파일명: {first_doc.get('ori_file_name', 'N/A')}")
+                            print(f"    - 보관자: {first_doc.get('custodian', 'N/A')}")
+                            print(f"    - 생성일: {first_doc.get('s_created_date', 'N/A')}")
+                            print(f"    - 발송일: {first_doc.get('sent_date', 'N/A')}")
+                            print(f"    - 발신자: {first_doc.get('from_name', 'N/A')}")
+                            print(f"    - 수신자: {first_doc.get('to_name', 'N/A')}")
+                            print(f"    - 확장자: {first_doc.get('extension', 'N/A')}")
+                            print(f"    - 최종 작성자: {first_doc.get('last_author', 'N/A')}")
+                            print(f"    - 내용 미리보기: {first_doc.get('content', 'N/A')[:150]}...")
+                else:
+                    print(f"❌ 조회 실패: {result.get('error', '알 수 없는 오류')}")
+                    
+        except Exception as e:
+            print(f"❌ 조회 중 오류: {e}")
+        
+        print()
+    
+    # 3. 필드별 고유값 상세 조회
+    print("\n📋 3단계: 필드별 고유값 상세 조회")
+    print("-" * 60)
+    
+    if unique_names_result['success']:
+        names = unique_names_result['names']
+        
+        # from_email 상세 조회
+        if names.get('from_emails'):
+            print(f"\n📤 from_email 전체 목록 ({len(names['from_emails'])}개):")
+            for i, email in enumerate(names['from_emails'], 1):
+                print(f"  {i}. {email}")
+        
+        # to_email 상세 조회
+        if names.get('to_emails'):
+            print(f"\n📥 to_email 전체 목록 ({len(names['to_emails'])}개):")
+            for i, email in enumerate(names['to_emails'], 1):
+                print(f"  {i}. {email}")
+        
+        # custodian 상세 조회
+        if names.get('custodian'):
+            print(f"\n👤 custodian 전체 목록 ({len(names['custodian'])}개):")
+            for i, custodian in enumerate(names['custodian'], 1):
+                print(f"  {i}. {custodian}")
+        
+        # last_author 상세 조회
+        if names.get('last_author'):
+            print(f"\n✍️ last_author 전체 목록 ({len(names['last_author'])}개):")
+            for i, author in enumerate(names['last_author'], 1):
+                print(f"  {i}. {author}")
+    
+    # 4. 테스트 쿼리 제안
+    print("\n�� 4단계: 추천 테스트 쿼리")
+    print("-" * 60)
+    
+    print("실제 데이터를 바탕으로 한 추천 테스트 쿼리들:")
+    print("\n�� 필터 기반 검색 쿼리:")
+    print("  1. 'Jeong, Yeeun (191) on behalf of korea_com (191-NPM)가 발신한 메시지를 모두 찾아줘'")
+    print("  2. 'Park, Sep (191) on behalf of korea_com (191-NPM)가 발신한 메시지를 모두 찾아줘'")
+    print("  3. '세진 김이 보관한 문서들을 모두 찾아줘'")
+    print("  4. 'Song, Jieun (191)가 최종 작성한 문서들을 모두 찾아줘'")
+    print("  5. 'msg 확장자 파일들을 모두 찾아줘'")
+    print("  6. 'pdf 확장자 파일들을 모두 찾아줘'")
+    print("  7. 'csv 확장자 파일들을 모두 찾아줘'")
+    
+    print("\n🔍 복합 필터 검색 쿼리:")
+    print("  8. '세진 김이 보관한 msg 파일들을 모두 찾아줘'")
+    print("  9. 'Song, Jieun (191)가 최종 작성한 pdf 파일들을 모두 찾아줘'")
+    
+    print("\n🔍 RAG 벡터 검색 쿼리:")
+    print("  10. 'EQC 전기차 관련 모든 자료'")
+    print("  11. 'MBUX 시스템 관련 기술 자료'")
+    print("  12. 'SOCAR와의 카셰어링 협력 관련 자료'")
+    
+    print("\n✅ 데이터 탐색 완료!")
+    print("\n💡 이제 위의 추천 쿼리들을 바탕으로 테스트 쿼리를 작성하세요!")
+
+
+async def main():
+    """메인 함수"""
+    await explore_database()
+
+
+if __name__ == "__main__":
+    asyncio.run(main()) 
