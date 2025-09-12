@@ -1,3 +1,112 @@
+(.venv) min.choi10@wss-195:/raid1/workspace/kars-agent/weaviate-mcp/tmp_sungwon_chae$ python test_extract_value_tool_modified.py 
+🚀 Weaviate MCP 도구 테스트 시작
+
+2025-09-12 17:13:58,801 - mcp_tools - INFO - Weaviate MCP 도구 초기화 완료
+2025-09-12 17:14:01,479 - httpx - INFO - HTTP Request: POST http://10.10.190.1:8124/v1/chat/completions "HTTP/1.1 200 OK"
+Test Query Response:  ChatCompletion(id='chatcmpl-bf37451b5ca547dbb97696a74f0db5d2', choices=[Choice(finish_reason='stop', index=0, logprobs=None, message=ChatCompletionMessage(content='<think>\nOkay, the user said "hi!" so they\'re probably just starting a conversation. I should respond in a friendly and welcoming way. Let me make sure to acknowledge their greeting and offer help. Maybe say something like "Hello! How can I assist you today?" That should cover it. Let me check if there\'s anything else I need to add. No, that\'s probably sufficient. Keep it simple and open-ended.\n</think>\n\nHello! How can I assist you today? 😊', refusal=None, role='assistant', annotations=None, audio=None, function_call=None, tool_calls=[], reasoning_content=None), stop_reason=None)], created=1757664844, model='/data/models_ckpt/Qwen3-32B', object='chat.completion', service_tier=None, system_fingerprint=None, usage=CompletionUsage(completion_tokens=101, prompt_tokens=10, total_tokens=111, completion_tokens_details=None, prompt_tokens_details=None), prompt_logprobs=None)
+✅ OpenAI 클라이언트 설정 완료
+🔍 extract_filter_from_query 도구 테스트 시작 (MBG 실제 데이터 기반)
+
+📋 테스트 목적:
+  1. Filter 자동 추출 검증
+  2. 벡터DB에서 관련 문서 검색 확인
+  3. 실제 MBG 데이터 기반 GT 검증
+  4. 유사도 기반 검색 성능 확인
+
+📋 FilterExtractionResult 필드:
+  - custodian: 보관자
+  - ori_file_name: 원본 파일명
+  - s_created_date: 생성일
+  - sent_date: 발송일
+  - from_name: 발신자 이름
+  - to_name: 수신자 이름
+  - cc: 참조자 이름
+  - bcc: 숨은참조자 이름
+  - last_author: 최종 작성자
+  - extension: 파일 확장자
+
+테스트 케이스 1: Lee Sang-kuk이 언급된 모든 이메일을 찾아주세요
+------------------------------------------------------------
+2025-09-12 17:14:01,497 - mcp_tools - INFO - 🔍 필터 추출 시작: 'Lee Sang-kuk이 언급된 모든 이메일을 찾아주세요'
+2025-09-12 17:14:03,011 - httpx - INFO - HTTP Request: POST http://10.10.190.1:8124/v1/chat/completions "HTTP/1.1 200 OK"
+2025-09-12 17:14:03,013 - kars_db - INFO - 🚀 RAG 벡터 데이터베이스 초기화 시작
+2025-09-12 17:14:03,013 - simple_manager - INFO - Weaviate URL: http://10.10.150.195:8080
+2025-09-12 17:14:03,013 - simple_manager - INFO - OpenAI Base URL: http://10.10.190.1:8125
+2025-09-12 17:14:03,013 - kars_db - INFO - ✅ VectorDB 매니저 초기화 완료
+2025-09-12 17:14:03,060 - httpx - INFO - HTTP Request: GET http://10.10.190.1:8125/v1/models "HTTP/1.1 200 OK"
+2025-09-12 17:14:03,061 - weaviate_db - INFO - ✅ vLLM 서버에서 모델명 가져옴: /data/models_ckpt/bge-m3
+2025-09-12 17:14:03,075 - httpx - INFO - HTTP Request: POST http://10.10.190.1:8125/v1/embeddings "HTTP/1.1 200 OK"
+2025-09-12 17:14:03,077 - weaviate_db - INFO - ✅ 샘플 임베딩 생성 성공 (차원: 1024)
+2025-09-12 17:14:03,107 - httpx - INFO - HTTP Request: GET http://10.10.150.195:8080/v1/.well-known/openid-configuration "HTTP/1.1 404 Not Found"
+2025-09-12 17:14:03,133 - httpx - INFO - HTTP Request: GET http://10.10.150.195:8080/v1/meta "HTTP/1.1 200 OK"
+2025-09-12 17:14:05,169 - weaviate_db - INFO - ✅ Weaviate 클라이언트 연결 성공: http://10.10.150.195:8080
+2025-09-12 17:14:05,169 - weaviate_db - INFO - 📡 OpenAI Base URL (Python용): http://10.10.190.1:8125/v1
+2025-09-12 17:14:05,169 - weaviate_db - INFO - 📡 OpenAI Base URL (Weaviate용): http://10.10.190.1:8125
+2025-09-12 17:14:05,169 - weaviate_db - INFO - 🔧 동적 모델명: /data/models_ckpt/bge-m3
+2025-09-12 17:14:05,169 - simple_manager - INFO - DB 연결 초기화 완료
+2025-09-12 17:14:05,173 - httpx - INFO - HTTP Request: GET http://10.10.150.195:8080/v1/schema "HTTP/1.1 200 OK"
+2025-09-12 17:14:05,178 - httpx - INFO - HTTP Request: GET http://10.10.150.195:8080/v1/schema/DocumentChunk "HTTP/1.1 200 OK"
+2025-09-12 17:14:05,185 - httpx - INFO - HTTP Request: GET http://10.10.150.195:8080/v1/schema/EnronDocument "HTTP/1.1 200 OK"
+2025-09-12 17:14:05,186 - weaviate_db - INFO - 스키마 조회 완료: 2개 클래스
+2025-09-12 17:14:05,187 - simple_manager - WARNING - 클래스 매핑 파일이 없습니다. 기본 규칙을 사용합니다.
+2025-09-12 17:14:05,187 - simple_manager - INFO - 기존 클래스 등록: chunk_db -> DocumentChunk
+2025-09-12 17:14:05,187 - simple_manager - INFO - 기존 클래스 등록: enron_db -> EnronDocument
+2025-09-12 17:14:05,187 - simple_manager - INFO - 총 2개 DB에 클래스 등록 완료
+2025-09-12 17:14:05,187 - simple_manager - INFO -   chunk_db: ['DocumentChunk']
+2025-09-12 17:14:05,187 - simple_manager - INFO -   enron_db: ['EnronDocument']
+2025-09-12 17:14:05,190 - httpx - INFO - HTTP Request: GET http://10.10.150.195:8080/v1/schema "HTTP/1.1 200 OK"
+2025-09-12 17:14:05,194 - httpx - INFO - HTTP Request: GET http://10.10.150.195:8080/v1/schema/DocumentChunk "HTTP/1.1 200 OK"
+2025-09-12 17:14:05,197 - httpx - INFO - HTTP Request: GET http://10.10.150.195:8080/v1/schema/EnronDocument "HTTP/1.1 200 OK"
+2025-09-12 17:14:05,198 - weaviate_db - INFO - 스키마 조회 완료: 2개 클래스
+2025-09-12 17:14:05,198 - kars_db - INFO - 📊 사용 가능한 클래스들: ['DocumentChunk', 'EnronDocument']
+2025-09-12 17:14:05,198 - kars_db - INFO - ✅ 사용할 클래스명: DocumentChunk
+2025-09-12 17:14:05,198 - mcp_tools - INFO - ✅ RAG 데이터베이스 초기화 성공: kars_test
+2025-09-12 17:14:05,198 - mcp_tools - INFO - 🔍 데이터베이스에서 unique한 이메일 값들을 조회합니다.
+2025-09-12 17:14:05,198 - kars_db - INFO - 🔍 Unique 값 조회 시작: field=from_email, limit=50000
+2025-09-12 17:14:05,284 - kars_db - INFO - ✅ Unique 값 조회 완료: from_email 필드에서 3개 unique 값 발견
+2025-09-12 17:14:05,284 - kars_db - INFO - 🔍 Unique 값 조회 시작: field=to_email, limit=50000
+2025-09-12 17:14:05,357 - kars_db - INFO - ✅ Unique 값 조회 완료: to_email 필드에서 1개 unique 값 발견
+2025-09-12 17:14:05,357 - kars_db - INFO - 🔍 Unique 값 조회 시작: field=custodian, limit=50000
+2025-09-12 17:14:05,410 - kars_db - INFO - ✅ Unique 값 조회 완료: custodian 필드에서 1개 unique 값 발견
+2025-09-12 17:14:05,410 - kars_db - INFO - 🔍 Unique 값 조회 시작: field=last_author, limit=50000
+2025-09-12 17:14:05,488 - kars_db - INFO - ✅ Unique 값 조회 완료: last_author 필드에서 14개 unique 값 발견
+2025-09-12 17:14:05,488 - mcp_tools - INFO - ✅ Unique 이름들 조회 완료: from_email 3개, to_email 1개, custodian 1, total_last_author:  14
+2025-09-12 17:14:05,488 - mcp_tools - INFO - ✅ 필터 추출 완료: similarity 검색, 필터: custodian=None ori_file_name=None s_created_date=None sent_date=None from_email=None to_email=None cc=None bcc=None last_author=None extension=None
+📊 추출된 필터:
+  - custodian: None
+  - ori_file_name: None
+  - s_created_date: None
+  - sent_date: None
+  - from_email: None
+  - to_email: None
+  - cc: None
+  - bcc: None
+  - last_author: None
+  - extension: None
+🔍 검색 방식: similarity
+💭 판단 근거: 질의에서 구체적인 필터 정보를 찾을 수 없어 유사도 기반 검색을 사용합니다.
+  📭 검색할 필터가 없어 단순 RAG 검색을 수행합니다.
+2025-09-12 17:14:05,488 - mcp_tools - INFO - 🔍 단순 RAG 검색 실행: 'Lee Sang-kuk이 언급된 모든 이메일을 찾아주세요' (limit: 5)
+2025-09-12 17:14:05,488 - kars_db - INFO - 🔍 검색 시작: 'Lee Sang-kuk이 언급된 모든 이메일을 찾아주세요' (limit: 5)
+2025-09-12 17:14:05,546 - weaviate_db - INFO - 🔍 검색 완료: 5개 결과 (쿼리: 'Lee Sang-kuk이 언급된 모든 이메일을 찾아주세요'
+2025-09-12 17:14:05,546 - kars_db - INFO - ✅ 검색 완료: 5개 결과 반환
+📊 RAG 검색 결과:
+  - 성공 여부: True
+  - 총 결과 수: 5개
+  - 검색 방식: N/A
+
+📄 검색된 문서들:
+  1. 문서 ID: 9f40c789-b76f-4f67-aa8d-be1b68f783a2
+     파일명: MBK-ND  CSI Newsletter Vol 16.msg
+     내용 미리보기: From:Kim, Young-Jin (191) on behalf of MBK-ND (191-NPM)
+Sent:Fri 11/15/2019
+To:dw_191-MBK_all
+Cc:Ch...
+
+  2. 문서 ID: 2989a80b-1949-4598-9f17-71cdda1e0e86
+     파일명: Request for information from National Assemblyman about EQE 350+ Thermal Incident case.msg
+     내용 미리보기: From:Han, Sung-Ho (191)
+Sent:Thu 8/08/2024
 To:Maurer, Jan-Philipp (059); Gmoser, Michael (059); Lie...
 
   3. 문서 ID: 78fccbc7-9c35-4f7b-ba78-4c12a53930c6
@@ -24,21 +133,21 @@ Cc:Kwak, Dio (191); Lieb, Sven ...
 
 테스트 케이스 2: 메르세데스-벤츠 코리아 홍보팀이 작성한 문서들
 ------------------------------------------------------------
-2025-09-12 16:50:51,618 - mcp_tools - INFO - 🔍 필터 추출 시작: '메르세데스-벤츠 코리아 홍보팀이 작성한 문서들'
-2025-09-12 16:50:53,503 - httpx - INFO - HTTP Request: POST http://10.10.190.1:8124/v1/chat/completions "HTTP/1.1 200 OK"
-2025-09-12 16:50:53,504 - mcp_tools - INFO - 🔍 데이터베이스에서 unique한 이메일 값들을 조회합니다.
-2025-09-12 16:50:53,505 - kars_db - INFO - 🔍 Unique 값 조회 시작: field=from_email, limit=50000
-2025-09-12 16:50:53,590 - kars_db - INFO - ✅ Unique 값 조회 완료: from_email 필드에서 3개 unique 값 발견
-2025-09-12 16:50:53,590 - kars_db - INFO - 🔍 Unique 값 조회 시작: field=to_email, limit=50000
-2025-09-12 16:50:53,674 - kars_db - INFO - ✅ Unique 값 조회 완료: to_email 필드에서 1개 unique 값 발견
-2025-09-12 16:50:53,675 - kars_db - INFO - 🔍 Unique 값 조회 시작: field=custodian, limit=50000
-2025-09-12 16:50:53,775 - kars_db - INFO - ✅ Unique 값 조회 완료: custodian 필드에서 1개 unique 값 발견
-2025-09-12 16:50:53,776 - kars_db - INFO - 🔍 Unique 값 조회 시작: field=last_author, limit=50000
-2025-09-12 16:50:53,856 - kars_db - INFO - ✅ Unique 값 조회 완료: last_author 필드에서 14개 unique 값 발견
-2025-09-12 16:50:53,856 - mcp_tools - INFO - ✅ Unique 이름들 조회 완료: from_email 3개, to_email 1개, custodian 1, total_last_author:  14
-2025-09-12 16:50:55,051 - httpx - INFO - HTTP Request: POST http://10.10.190.1:8124/v1/chat/completions "HTTP/1.1 200 OK"
-2025-09-12 16:50:55,052 - mcp_tools - INFO - ✅ custodian 필드 수정: '메르세데스-벤츠 코리아 홍보팀' → '세진 김' (유사도: 30.00)
-2025-09-12 16:50:55,053 - mcp_tools - INFO - ✅ 필터 추출 완료: similarity 검색, 필터: custodian='세진 김' ori_file_name=None s_created_date=None sent_date=None from_email=None to_email=None cc=None bcc=None last_author=None extension=None
+2025-09-12 17:14:05,546 - mcp_tools - INFO - 🔍 필터 추출 시작: '메르세데스-벤츠 코리아 홍보팀이 작성한 문서들'
+2025-09-12 17:14:07,450 - httpx - INFO - HTTP Request: POST http://10.10.190.1:8124/v1/chat/completions "HTTP/1.1 200 OK"
+2025-09-12 17:14:07,451 - mcp_tools - INFO - 🔍 데이터베이스에서 unique한 이메일 값들을 조회합니다.
+2025-09-12 17:14:07,451 - kars_db - INFO - 🔍 Unique 값 조회 시작: field=from_email, limit=50000
+2025-09-12 17:14:07,528 - kars_db - INFO - ✅ Unique 값 조회 완료: from_email 필드에서 3개 unique 값 발견
+2025-09-12 17:14:07,528 - kars_db - INFO - 🔍 Unique 값 조회 시작: field=to_email, limit=50000
+2025-09-12 17:14:07,606 - kars_db - INFO - ✅ Unique 값 조회 완료: to_email 필드에서 1개 unique 값 발견
+2025-09-12 17:14:07,607 - kars_db - INFO - 🔍 Unique 값 조회 시작: field=custodian, limit=50000
+2025-09-12 17:14:07,689 - kars_db - INFO - ✅ Unique 값 조회 완료: custodian 필드에서 1개 unique 값 발견
+2025-09-12 17:14:07,689 - kars_db - INFO - 🔍 Unique 값 조회 시작: field=last_author, limit=50000
+2025-09-12 17:14:07,757 - kars_db - INFO - ✅ Unique 값 조회 완료: last_author 필드에서 14개 unique 값 발견
+2025-09-12 17:14:07,757 - mcp_tools - INFO - ✅ Unique 이름들 조회 완료: from_email 3개, to_email 1개, custodian 1, total_last_author:  14
+2025-09-12 17:14:08,963 - httpx - INFO - HTTP Request: POST http://10.10.190.1:8124/v1/chat/completions "HTTP/1.1 200 OK"
+2025-09-12 17:14:08,965 - mcp_tools - INFO - ✅ custodian 필드 수정: '메르세데스-벤츠 코리아 홍보팀' → '세진 김' (유사도: 30.00)
+2025-09-12 17:14:08,965 - mcp_tools - INFO - ✅ 필터 추출 완료: similarity 검색, 필터: custodian='세진 김' ori_file_name=None s_created_date=None sent_date=None from_email=None to_email=None cc=None bcc=None last_author=None extension=None
 📊 추출된 필터:
   - custodian: 세진 김
   - ori_file_name: None
@@ -53,10 +162,10 @@ Cc:Kwak, Dio (191); Lieb, Sven ...
 🔍 검색 방식: similarity
 💭 판단 근거: 질의에서 구체적인 필터 정보를 찾았지만 단일 필터이므로 유사도 기반 검색을 사용합니다.
 📋 검색에 사용할 필터: {'custodian': '세진 김'}
-2025-09-12 16:50:55,053 - mcp_tools - INFO - 🔍 필터 검색 실행: class_name=DocumentChunk, limit=5, filters={'custodian': '세진 김'}
-2025-09-12 16:50:55,053 - kars_db - INFO - 필터 검색 시작: class_name=DocumentChunk, limit=5, filters={'custodian': '세진 김'}
-2025-09-12 16:50:55,053 - kars_db - INFO - 필터와 함께 검색: {'custodian': '세진 김'}
-2025-09-12 16:50:55,065 - kars_db - INFO - ✅ 필터 검색 완료: 5개 결과 반환
+2025-09-12 17:14:08,966 - mcp_tools - INFO - 🔍 필터 검색 실행: class_name=DocumentChunk, limit=5, filters={'custodian': '세진 김'}
+2025-09-12 17:14:08,966 - kars_db - INFO - 필터 검색 시작: class_name=DocumentChunk, limit=5, filters={'custodian': '세진 김'}
+2025-09-12 17:14:08,966 - kars_db - INFO - 필터와 함께 검색: {'custodian': '세진 김'}
+2025-09-12 17:14:08,977 - kars_db - INFO - ✅ 필터 검색 완료: 5개 결과 반환
 📊 검색 결과:
   - 성공 여부: True
   - 총 결과 수: 5개
@@ -124,19 +233,19 @@ Cc:Kwak, Dio (191); Lieb, Sven ...
 
 테스트 케이스 3: EQC 전기차 관련 모든 자료
 ------------------------------------------------------------
-2025-09-12 16:50:55,066 - mcp_tools - INFO - 🔍 필터 추출 시작: 'EQC 전기차 관련 모든 자료'
-2025-09-12 16:50:56,563 - httpx - INFO - HTTP Request: POST http://10.10.190.1:8124/v1/chat/completions "HTTP/1.1 200 OK"
-2025-09-12 16:50:56,565 - mcp_tools - INFO - 🔍 데이터베이스에서 unique한 이메일 값들을 조회합니다.
-2025-09-12 16:50:56,565 - kars_db - INFO - 🔍 Unique 값 조회 시작: field=from_email, limit=50000
-2025-09-12 16:50:56,643 - kars_db - INFO - ✅ Unique 값 조회 완료: from_email 필드에서 3개 unique 값 발견
-2025-09-12 16:50:56,643 - kars_db - INFO - 🔍 Unique 값 조회 시작: field=to_email, limit=50000
-2025-09-12 16:50:56,722 - kars_db - INFO - ✅ Unique 값 조회 완료: to_email 필드에서 1개 unique 값 발견
-2025-09-12 16:50:56,722 - kars_db - INFO - 🔍 Unique 값 조회 시작: field=custodian, limit=50000
-2025-09-12 16:50:56,803 - kars_db - INFO - ✅ Unique 값 조회 완료: custodian 필드에서 1개 unique 값 발견
-2025-09-12 16:50:56,803 - kars_db - INFO - 🔍 Unique 값 조회 시작: field=last_author, limit=50000
-2025-09-12 16:50:56,878 - kars_db - INFO - ✅ Unique 값 조회 완료: last_author 필드에서 14개 unique 값 발견
-2025-09-12 16:50:56,879 - mcp_tools - INFO - ✅ Unique 이름들 조회 완료: from_email 3개, to_email 1개, custodian 1, total_last_author:  14
-2025-09-12 16:50:56,879 - mcp_tools - INFO - ✅ 필터 추출 완료: similarity 검색, 필터: custodian=None ori_file_name=None s_created_date=None sent_date=None from_email=None to_email=None cc=None bcc=None last_author=None extension=None
+2025-09-12 17:14:08,979 - mcp_tools - INFO - 🔍 필터 추출 시작: 'EQC 전기차 관련 모든 자료'
+2025-09-12 17:14:10,488 - httpx - INFO - HTTP Request: POST http://10.10.190.1:8124/v1/chat/completions "HTTP/1.1 200 OK"
+2025-09-12 17:14:10,489 - mcp_tools - INFO - 🔍 데이터베이스에서 unique한 이메일 값들을 조회합니다.
+2025-09-12 17:14:10,490 - kars_db - INFO - 🔍 Unique 값 조회 시작: field=from_email, limit=50000
+2025-09-12 17:14:10,563 - kars_db - INFO - ✅ Unique 값 조회 완료: from_email 필드에서 3개 unique 값 발견
+2025-09-12 17:14:10,563 - kars_db - INFO - 🔍 Unique 값 조회 시작: field=to_email, limit=50000
+2025-09-12 17:14:10,629 - kars_db - INFO - ✅ Unique 값 조회 완료: to_email 필드에서 1개 unique 값 발견
+2025-09-12 17:14:10,629 - kars_db - INFO - 🔍 Unique 값 조회 시작: field=custodian, limit=50000
+2025-09-12 17:14:10,704 - kars_db - INFO - ✅ Unique 값 조회 완료: custodian 필드에서 1개 unique 값 발견
+2025-09-12 17:14:10,704 - kars_db - INFO - 🔍 Unique 값 조회 시작: field=last_author, limit=50000
+2025-09-12 17:14:10,768 - kars_db - INFO - ✅ Unique 값 조회 완료: last_author 필드에서 14개 unique 값 발견
+2025-09-12 17:14:10,768 - mcp_tools - INFO - ✅ Unique 이름들 조회 완료: from_email 3개, to_email 1개, custodian 1, total_last_author:  14
+2025-09-12 17:14:10,768 - mcp_tools - INFO - ✅ 필터 추출 완료: similarity 검색, 필터: custodian=None ori_file_name=None s_created_date=None sent_date=None from_email=None to_email=None cc=None bcc=None last_author=None extension=None
 📊 추출된 필터:
   - custodian: None
   - ori_file_name: None
@@ -151,10 +260,10 @@ Cc:Kwak, Dio (191); Lieb, Sven ...
 🔍 검색 방식: similarity
 💭 판단 근거: 질의에서 구체적인 필터 정보를 찾을 수 없어 유사도 기반 검색을 사용합니다.
   📭 검색할 필터가 없어 단순 RAG 검색을 수행합니다.
-2025-09-12 16:50:56,879 - mcp_tools - INFO - 🔍 단순 RAG 검색 실행: 'EQC 전기차 관련 모든 자료' (limit: 5)
-2025-09-12 16:50:56,879 - kars_db - INFO - 🔍 검색 시작: 'EQC 전기차 관련 모든 자료' (limit: 5)
-2025-09-12 16:50:56,923 - weaviate_db - INFO - 🔍 검색 완료: 5개 결과 (쿼리: 'EQC 전기차 관련 모든 자료'
-2025-09-12 16:50:56,923 - kars_db - INFO - ✅ 검색 완료: 5개 결과 반환
+2025-09-12 17:14:10,768 - mcp_tools - INFO - 🔍 단순 RAG 검색 실행: 'EQC 전기차 관련 모든 자료' (limit: 5)
+2025-09-12 17:14:10,768 - kars_db - INFO - 🔍 검색 시작: 'EQC 전기차 관련 모든 자료' (limit: 5)
+2025-09-12 17:14:10,808 - weaviate_db - INFO - 🔍 검색 완료: 5개 결과 (쿼리: 'EQC 전기차 관련 모든 자료'
+2025-09-12 17:14:10,808 - kars_db - INFO - ✅ 검색 완료: 5개 결과 반환
 📊 RAG 검색 결과:
   - 성공 여부: True
   - 총 결과 수: 5개
@@ -186,19 +295,19 @@ Cc:Kwak, Dio (191); Lieb, Sven ...
 
 테스트 케이스 4: SOCAR 관련 모든 문서들
 ------------------------------------------------------------
-2025-09-12 16:50:56,924 - mcp_tools - INFO - 🔍 필터 추출 시작: 'SOCAR 관련 모든 문서들'
-2025-09-12 16:50:58,425 - httpx - INFO - HTTP Request: POST http://10.10.190.1:8124/v1/chat/completions "HTTP/1.1 200 OK"
-2025-09-12 16:50:58,426 - mcp_tools - INFO - 🔍 데이터베이스에서 unique한 이메일 값들을 조회합니다.
-2025-09-12 16:50:58,426 - kars_db - INFO - 🔍 Unique 값 조회 시작: field=from_email, limit=50000
-2025-09-12 16:50:58,504 - kars_db - INFO - ✅ Unique 값 조회 완료: from_email 필드에서 3개 unique 값 발견
-2025-09-12 16:50:58,504 - kars_db - INFO - 🔍 Unique 값 조회 시작: field=to_email, limit=50000
-2025-09-12 16:50:58,582 - kars_db - INFO - ✅ Unique 값 조회 완료: to_email 필드에서 1개 unique 값 발견
-2025-09-12 16:50:58,583 - kars_db - INFO - 🔍 Unique 값 조회 시작: field=custodian, limit=50000
-2025-09-12 16:50:58,658 - kars_db - INFO - ✅ Unique 값 조회 완료: custodian 필드에서 1개 unique 값 발견
-2025-09-12 16:50:58,659 - kars_db - INFO - 🔍 Unique 값 조회 시작: field=last_author, limit=50000
-2025-09-12 16:50:58,730 - kars_db - INFO - ✅ Unique 값 조회 완료: last_author 필드에서 14개 unique 값 발견
-2025-09-12 16:50:58,730 - mcp_tools - INFO - ✅ Unique 이름들 조회 완료: from_email 3개, to_email 1개, custodian 1, total_last_author:  14
-2025-09-12 16:50:58,731 - mcp_tools - INFO - ✅ 필터 추출 완료: similarity 검색, 필터: custodian=None ori_file_name=None s_created_date=None sent_date=None from_email=None to_email=None cc=None bcc=None last_author=None extension=None
+2025-09-12 17:14:10,809 - mcp_tools - INFO - 🔍 필터 추출 시작: 'SOCAR 관련 모든 문서들'
+2025-09-12 17:14:12,322 - httpx - INFO - HTTP Request: POST http://10.10.190.1:8124/v1/chat/completions "HTTP/1.1 200 OK"
+2025-09-12 17:14:12,323 - mcp_tools - INFO - 🔍 데이터베이스에서 unique한 이메일 값들을 조회합니다.
+2025-09-12 17:14:12,323 - kars_db - INFO - 🔍 Unique 값 조회 시작: field=from_email, limit=50000
+2025-09-12 17:14:12,396 - kars_db - INFO - ✅ Unique 값 조회 완료: from_email 필드에서 3개 unique 값 발견
+2025-09-12 17:14:12,396 - kars_db - INFO - 🔍 Unique 값 조회 시작: field=to_email, limit=50000
+2025-09-12 17:14:12,454 - kars_db - INFO - ✅ Unique 값 조회 완료: to_email 필드에서 1개 unique 값 발견
+2025-09-12 17:14:12,455 - kars_db - INFO - 🔍 Unique 값 조회 시작: field=custodian, limit=50000
+2025-09-12 17:14:12,531 - kars_db - INFO - ✅ Unique 값 조회 완료: custodian 필드에서 1개 unique 값 발견
+2025-09-12 17:14:12,531 - kars_db - INFO - 🔍 Unique 값 조회 시작: field=last_author, limit=50000
+2025-09-12 17:14:12,602 - kars_db - INFO - ✅ Unique 값 조회 완료: last_author 필드에서 14개 unique 값 발견
+2025-09-12 17:14:12,603 - mcp_tools - INFO - ✅ Unique 이름들 조회 완료: from_email 3개, to_email 1개, custodian 1, total_last_author:  14
+2025-09-12 17:14:12,603 - mcp_tools - INFO - ✅ 필터 추출 완료: similarity 검색, 필터: custodian=None ori_file_name=None s_created_date=None sent_date=None from_email=None to_email=None cc=None bcc=None last_author=None extension=None
 📊 추출된 필터:
   - custodian: None
   - ori_file_name: None
@@ -213,10 +322,10 @@ Cc:Kwak, Dio (191); Lieb, Sven ...
 🔍 검색 방식: similarity
 💭 판단 근거: 질의에서 구체적인 필터 정보를 찾을 수 없어 유사도 기반 검색을 사용합니다.
   📭 검색할 필터가 없어 단순 RAG 검색을 수행합니다.
-2025-09-12 16:50:58,731 - mcp_tools - INFO - 🔍 단순 RAG 검색 실행: 'SOCAR 관련 모든 문서들' (limit: 5)
-2025-09-12 16:50:58,731 - kars_db - INFO - 🔍 검색 시작: 'SOCAR 관련 모든 문서들' (limit: 5)
-2025-09-12 16:50:58,817 - weaviate_db - INFO - 🔍 검색 완료: 5개 결과 (쿼리: 'SOCAR 관련 모든 문서들'
-2025-09-12 16:50:58,817 - kars_db - INFO - ✅ 검색 완료: 5개 결과 반환
+2025-09-12 17:14:12,603 - mcp_tools - INFO - 🔍 단순 RAG 검색 실행: 'SOCAR 관련 모든 문서들' (limit: 5)
+2025-09-12 17:14:12,603 - kars_db - INFO - 🔍 검색 시작: 'SOCAR 관련 모든 문서들' (limit: 5)
+2025-09-12 17:14:12,685 - weaviate_db - INFO - 🔍 검색 완료: 5개 결과 (쿼리: 'SOCAR 관련 모든 문서들'
+2025-09-12 17:14:12,685 - kars_db - INFO - ✅ 검색 완료: 5개 결과 반환
 📊 RAG 검색 결과:
   - 성공 여부: True
   - 총 결과 수: 5개
@@ -498,19 +607,19 @@ Cc:Kwak, Dio (191); Lieb, Sven ...
 
 테스트 케이스 5: MBUX 시스템 관련 기술 자료
 ------------------------------------------------------------
-2025-09-12 16:50:58,817 - mcp_tools - INFO - 🔍 필터 추출 시작: 'MBUX 시스템 관련 기술 자료'
-2025-09-12 16:51:00,315 - httpx - INFO - HTTP Request: POST http://10.10.190.1:8124/v1/chat/completions "HTTP/1.1 200 OK"
-2025-09-12 16:51:00,317 - mcp_tools - INFO - 🔍 데이터베이스에서 unique한 이메일 값들을 조회합니다.
-2025-09-12 16:51:00,317 - kars_db - INFO - 🔍 Unique 값 조회 시작: field=from_email, limit=50000
-2025-09-12 16:51:00,394 - kars_db - INFO - ✅ Unique 값 조회 완료: from_email 필드에서 3개 unique 값 발견
-2025-09-12 16:51:00,394 - kars_db - INFO - 🔍 Unique 값 조회 시작: field=to_email, limit=50000
-2025-09-12 16:51:00,453 - kars_db - INFO - ✅ Unique 값 조회 완료: to_email 필드에서 1개 unique 값 발견
-2025-09-12 16:51:00,453 - kars_db - INFO - 🔍 Unique 값 조회 시작: field=custodian, limit=50000
-2025-09-12 16:51:00,525 - kars_db - INFO - ✅ Unique 값 조회 완료: custodian 필드에서 1개 unique 값 발견
-2025-09-12 16:51:00,525 - kars_db - INFO - 🔍 Unique 값 조회 시작: field=last_author, limit=50000
-2025-09-12 16:51:00,605 - kars_db - INFO - ✅ Unique 값 조회 완료: last_author 필드에서 14개 unique 값 발견
-2025-09-12 16:51:00,606 - mcp_tools - INFO - ✅ Unique 이름들 조회 완료: from_email 3개, to_email 1개, custodian 1, total_last_author:  14
-2025-09-12 16:51:00,606 - mcp_tools - INFO - ✅ 필터 추출 완료: similarity 검색, 필터: custodian=None ori_file_name=None s_created_date=None sent_date=None from_email=None to_email=None cc=None bcc=None last_author=None extension=None
+2025-09-12 17:14:12,685 - mcp_tools - INFO - 🔍 필터 추출 시작: 'MBUX 시스템 관련 기술 자료'
+2025-09-12 17:14:14,197 - httpx - INFO - HTTP Request: POST http://10.10.190.1:8124/v1/chat/completions "HTTP/1.1 200 OK"
+2025-09-12 17:14:14,198 - mcp_tools - INFO - 🔍 데이터베이스에서 unique한 이메일 값들을 조회합니다.
+2025-09-12 17:14:14,198 - kars_db - INFO - 🔍 Unique 값 조회 시작: field=from_email, limit=50000
+2025-09-12 17:14:14,287 - kars_db - INFO - ✅ Unique 값 조회 완료: from_email 필드에서 3개 unique 값 발견
+2025-09-12 17:14:14,287 - kars_db - INFO - 🔍 Unique 값 조회 시작: field=to_email, limit=50000
+2025-09-12 17:14:14,360 - kars_db - INFO - ✅ Unique 값 조회 완료: to_email 필드에서 1개 unique 값 발견
+2025-09-12 17:14:14,360 - kars_db - INFO - 🔍 Unique 값 조회 시작: field=custodian, limit=50000
+2025-09-12 17:14:14,428 - kars_db - INFO - ✅ Unique 값 조회 완료: custodian 필드에서 1개 unique 값 발견
+2025-09-12 17:14:14,428 - kars_db - INFO - 🔍 Unique 값 조회 시작: field=last_author, limit=50000
+2025-09-12 17:14:14,490 - kars_db - INFO - ✅ Unique 값 조회 완료: last_author 필드에서 14개 unique 값 발견
+2025-09-12 17:14:14,490 - mcp_tools - INFO - ✅ Unique 이름들 조회 완료: from_email 3개, to_email 1개, custodian 1, total_last_author:  14
+2025-09-12 17:14:14,491 - mcp_tools - INFO - ✅ 필터 추출 완료: similarity 검색, 필터: custodian=None ori_file_name=None s_created_date=None sent_date=None from_email=None to_email=None cc=None bcc=None last_author=None extension=None
 📊 추출된 필터:
   - custodian: None
   - ori_file_name: None
@@ -525,10 +634,10 @@ Cc:Kwak, Dio (191); Lieb, Sven ...
 🔍 검색 방식: similarity
 💭 판단 근거: 질의에서 구체적인 필터 정보를 찾을 수 없어 유사도 기반 검색을 사용합니다.
   📭 검색할 필터가 없어 단순 RAG 검색을 수행합니다.
-2025-09-12 16:51:00,606 - mcp_tools - INFO - 🔍 단순 RAG 검색 실행: 'MBUX 시스템 관련 기술 자료' (limit: 5)
-2025-09-12 16:51:00,606 - kars_db - INFO - 🔍 검색 시작: 'MBUX 시스템 관련 기술 자료' (limit: 5)
-2025-09-12 16:51:00,665 - weaviate_db - INFO - 🔍 검색 완료: 5개 결과 (쿼리: 'MBUX 시스템 관련 기술 자료'
-2025-09-12 16:51:00,665 - kars_db - INFO - ✅ 검색 완료: 5개 결과 반환
+2025-09-12 17:14:14,491 - mcp_tools - INFO - 🔍 단순 RAG 검색 실행: 'MBUX 시스템 관련 기술 자료' (limit: 5)
+2025-09-12 17:14:14,491 - kars_db - INFO - 🔍 검색 시작: 'MBUX 시스템 관련 기술 자료' (limit: 5)
+2025-09-12 17:14:14,552 - weaviate_db - INFO - 🔍 검색 완료: 5개 결과 (쿼리: 'MBUX 시스템 관련 기술 자료'
+2025-09-12 17:14:14,552 - kars_db - INFO - ✅ 검색 완료: 5개 결과 반환
 📊 RAG 검색 결과:
   - 성공 여부: True
   - 총 결과 수: 5개
@@ -560,19 +669,19 @@ Cc:Kwak, Dio (191); Lieb, Sven ...
 
 테스트 케이스 6: 4MATIC 사륜구동 시스템 관련 자료
 ------------------------------------------------------------
-2025-09-12 16:51:00,666 - mcp_tools - INFO - 🔍 필터 추출 시작: '4MATIC 사륜구동 시스템 관련 자료'
-2025-09-12 16:51:02,163 - httpx - INFO - HTTP Request: POST http://10.10.190.1:8124/v1/chat/completions "HTTP/1.1 200 OK"
-2025-09-12 16:51:02,165 - mcp_tools - INFO - 🔍 데이터베이스에서 unique한 이메일 값들을 조회합니다.
-2025-09-12 16:51:02,165 - kars_db - INFO - 🔍 Unique 값 조회 시작: field=from_email, limit=50000
-2025-09-12 16:51:02,242 - kars_db - INFO - ✅ Unique 값 조회 완료: from_email 필드에서 3개 unique 값 발견
-2025-09-12 16:51:02,243 - kars_db - INFO - 🔍 Unique 값 조회 시작: field=to_email, limit=50000
-2025-09-12 16:51:02,314 - kars_db - INFO - ✅ Unique 값 조회 완료: to_email 필드에서 1개 unique 값 발견
-2025-09-12 16:51:02,314 - kars_db - INFO - 🔍 Unique 값 조회 시작: field=custodian, limit=50000
-2025-09-12 16:51:02,385 - kars_db - INFO - ✅ Unique 값 조회 완료: custodian 필드에서 1개 unique 값 발견
-2025-09-12 16:51:02,386 - kars_db - INFO - 🔍 Unique 값 조회 시작: field=last_author, limit=50000
-2025-09-12 16:51:02,459 - kars_db - INFO - ✅ Unique 값 조회 완료: last_author 필드에서 14개 unique 값 발견
-2025-09-12 16:51:02,460 - mcp_tools - INFO - ✅ Unique 이름들 조회 완료: from_email 3개, to_email 1개, custodian 1, total_last_author:  14
-2025-09-12 16:51:02,460 - mcp_tools - INFO - ✅ 필터 추출 완료: similarity 검색, 필터: custodian=None ori_file_name=None s_created_date=None sent_date=None from_email=None to_email=None cc=None bcc=None last_author=None extension=None
+2025-09-12 17:14:14,553 - mcp_tools - INFO - 🔍 필터 추출 시작: '4MATIC 사륜구동 시스템 관련 자료'
+2025-09-12 17:14:16,063 - httpx - INFO - HTTP Request: POST http://10.10.190.1:8124/v1/chat/completions "HTTP/1.1 200 OK"
+2025-09-12 17:14:16,065 - mcp_tools - INFO - 🔍 데이터베이스에서 unique한 이메일 값들을 조회합니다.
+2025-09-12 17:14:16,065 - kars_db - INFO - 🔍 Unique 값 조회 시작: field=from_email, limit=50000
+2025-09-12 17:14:16,137 - kars_db - INFO - ✅ Unique 값 조회 완료: from_email 필드에서 3개 unique 값 발견
+2025-09-12 17:14:16,137 - kars_db - INFO - 🔍 Unique 값 조회 시작: field=to_email, limit=50000
+2025-09-12 17:14:16,208 - kars_db - INFO - ✅ Unique 값 조회 완료: to_email 필드에서 1개 unique 값 발견
+2025-09-12 17:14:16,209 - kars_db - INFO - 🔍 Unique 값 조회 시작: field=custodian, limit=50000
+2025-09-12 17:14:16,283 - kars_db - INFO - ✅ Unique 값 조회 완료: custodian 필드에서 1개 unique 값 발견
+2025-09-12 17:14:16,283 - kars_db - INFO - 🔍 Unique 값 조회 시작: field=last_author, limit=50000
+2025-09-12 17:14:16,347 - kars_db - INFO - ✅ Unique 값 조회 완료: last_author 필드에서 14개 unique 값 발견
+2025-09-12 17:14:16,347 - mcp_tools - INFO - ✅ Unique 이름들 조회 완료: from_email 3개, to_email 1개, custodian 1, total_last_author:  14
+2025-09-12 17:14:16,347 - mcp_tools - INFO - ✅ 필터 추출 완료: similarity 검색, 필터: custodian=None ori_file_name=None s_created_date=None sent_date=None from_email=None to_email=None cc=None bcc=None last_author=None extension=None
 📊 추출된 필터:
   - custodian: None
   - ori_file_name: None
@@ -587,10 +696,10 @@ Cc:Kwak, Dio (191); Lieb, Sven ...
 🔍 검색 방식: similarity
 💭 판단 근거: 질의에서 구체적인 필터 정보를 찾을 수 없어 유사도 기반 검색을 사용합니다.
   📭 검색할 필터가 없어 단순 RAG 검색을 수행합니다.
-2025-09-12 16:51:02,460 - mcp_tools - INFO - 🔍 단순 RAG 검색 실행: '4MATIC 사륜구동 시스템 관련 자료' (limit: 5)
-2025-09-12 16:51:02,460 - kars_db - INFO - 🔍 검색 시작: '4MATIC 사륜구동 시스템 관련 자료' (limit: 5)
-2025-09-12 16:51:02,518 - weaviate_db - INFO - 🔍 검색 완료: 5개 결과 (쿼리: '4MATIC 사륜구동 시스템 관련 자료'
-2025-09-12 16:51:02,518 - kars_db - INFO - ✅ 검색 완료: 5개 결과 반환
+2025-09-12 17:14:16,347 - mcp_tools - INFO - 🔍 단순 RAG 검색 실행: '4MATIC 사륜구동 시스템 관련 자료' (limit: 5)
+2025-09-12 17:14:16,347 - kars_db - INFO - 🔍 검색 시작: '4MATIC 사륜구동 시스템 관련 자료' (limit: 5)
+2025-09-12 17:14:16,407 - weaviate_db - INFO - 🔍 검색 완료: 5개 결과 (쿼리: '4MATIC 사륜구동 시스템 관련 자료'
+2025-09-12 17:14:16,407 - kars_db - INFO - ✅ 검색 완료: 5개 결과 반환
 📊 RAG 검색 결과:
   - 성공 여부: True
   - 총 결과 수: 5개
@@ -622,19 +731,19 @@ Cc:Kwak, Dio (191); Lieb, Sven ...
 
 테스트 케이스 7: SOCAR와의 카셰어링 협력 관련 자료
 ------------------------------------------------------------
-2025-09-12 16:51:02,519 - mcp_tools - INFO - 🔍 필터 추출 시작: 'SOCAR와의 카셰어링 협력 관련 자료'
-2025-09-12 16:51:04,021 - httpx - INFO - HTTP Request: POST http://10.10.190.1:8124/v1/chat/completions "HTTP/1.1 200 OK"
-2025-09-12 16:51:04,023 - mcp_tools - INFO - 🔍 데이터베이스에서 unique한 이메일 값들을 조회합니다.
-2025-09-12 16:51:04,023 - kars_db - INFO - 🔍 Unique 값 조회 시작: field=from_email, limit=50000
-2025-09-12 16:51:04,098 - kars_db - INFO - ✅ Unique 값 조회 완료: from_email 필드에서 3개 unique 값 발견
-2025-09-12 16:51:04,098 - kars_db - INFO - 🔍 Unique 값 조회 시작: field=to_email, limit=50000
-2025-09-12 16:51:04,171 - kars_db - INFO - ✅ Unique 값 조회 완료: to_email 필드에서 1개 unique 값 발견
-2025-09-12 16:51:04,172 - kars_db - INFO - 🔍 Unique 값 조회 시작: field=custodian, limit=50000
-2025-09-12 16:51:04,246 - kars_db - INFO - ✅ Unique 값 조회 완료: custodian 필드에서 1개 unique 값 발견
-2025-09-12 16:51:04,247 - kars_db - INFO - 🔍 Unique 값 조회 시작: field=last_author, limit=50000
-2025-09-12 16:51:04,318 - kars_db - INFO - ✅ Unique 값 조회 완료: last_author 필드에서 14개 unique 값 발견
-2025-09-12 16:51:04,318 - mcp_tools - INFO - ✅ Unique 이름들 조회 완료: from_email 3개, to_email 1개, custodian 1, total_last_author:  14
-2025-09-12 16:51:04,318 - mcp_tools - INFO - ✅ 필터 추출 완료: similarity 검색, 필터: custodian=None ori_file_name=None s_created_date=None sent_date=None from_email=None to_email=None cc=None bcc=None last_author=None extension=None
+2025-09-12 17:14:16,408 - mcp_tools - INFO - 🔍 필터 추출 시작: 'SOCAR와의 카셰어링 협력 관련 자료'
+2025-09-12 17:14:17,919 - httpx - INFO - HTTP Request: POST http://10.10.190.1:8124/v1/chat/completions "HTTP/1.1 200 OK"
+2025-09-12 17:14:17,921 - mcp_tools - INFO - 🔍 데이터베이스에서 unique한 이메일 값들을 조회합니다.
+2025-09-12 17:14:17,921 - kars_db - INFO - 🔍 Unique 값 조회 시작: field=from_email, limit=50000
+2025-09-12 17:14:17,999 - kars_db - INFO - ✅ Unique 값 조회 완료: from_email 필드에서 3개 unique 값 발견
+2025-09-12 17:14:17,999 - kars_db - INFO - 🔍 Unique 값 조회 시작: field=to_email, limit=50000
+2025-09-12 17:14:18,059 - kars_db - INFO - ✅ Unique 값 조회 완료: to_email 필드에서 1개 unique 값 발견
+2025-09-12 17:14:18,059 - kars_db - INFO - 🔍 Unique 값 조회 시작: field=custodian, limit=50000
+2025-09-12 17:14:18,134 - kars_db - INFO - ✅ Unique 값 조회 완료: custodian 필드에서 1개 unique 값 발견
+2025-09-12 17:14:18,134 - kars_db - INFO - 🔍 Unique 값 조회 시작: field=last_author, limit=50000
+2025-09-12 17:14:18,209 - kars_db - INFO - ✅ Unique 값 조회 완료: last_author 필드에서 14개 unique 값 발견
+2025-09-12 17:14:18,210 - mcp_tools - INFO - ✅ Unique 이름들 조회 완료: from_email 3개, to_email 1개, custodian 1, total_last_author:  14
+2025-09-12 17:14:18,210 - mcp_tools - INFO - ✅ 필터 추출 완료: similarity 검색, 필터: custodian=None ori_file_name=None s_created_date=None sent_date=None from_email=None to_email=None cc=None bcc=None last_author=None extension=None
 📊 추출된 필터:
   - custodian: None
   - ori_file_name: None
@@ -649,10 +758,10 @@ Cc:Kwak, Dio (191); Lieb, Sven ...
 🔍 검색 방식: similarity
 💭 판단 근거: 질의에서 구체적인 필터 정보를 찾을 수 없어 유사도 기반 검색을 사용합니다.
   📭 검색할 필터가 없어 단순 RAG 검색을 수행합니다.
-2025-09-12 16:51:04,319 - mcp_tools - INFO - 🔍 단순 RAG 검색 실행: 'SOCAR와의 카셰어링 협력 관련 자료' (limit: 5)
-2025-09-12 16:51:04,319 - kars_db - INFO - 🔍 검색 시작: 'SOCAR와의 카셰어링 협력 관련 자료' (limit: 5)
-2025-09-12 16:51:04,363 - weaviate_db - INFO - 🔍 검색 완료: 5개 결과 (쿼리: 'SOCAR와의 카셰어링 협력 관련 자료'
-2025-09-12 16:51:04,364 - kars_db - INFO - ✅ 검색 완료: 5개 결과 반환
+2025-09-12 17:14:18,210 - mcp_tools - INFO - 🔍 단순 RAG 검색 실행: 'SOCAR와의 카셰어링 협력 관련 자료' (limit: 5)
+2025-09-12 17:14:18,210 - kars_db - INFO - 🔍 검색 시작: 'SOCAR와의 카셰어링 협력 관련 자료' (limit: 5)
+2025-09-12 17:14:18,252 - weaviate_db - INFO - 🔍 검색 완료: 5개 결과 (쿼리: 'SOCAR와의 카셰어링 협력 관련 자료'
+2025-09-12 17:14:18,253 - kars_db - INFO - ✅ 검색 완료: 5개 결과 반환
 📊 RAG 검색 결과:
   - 성공 여부: True
   - 총 결과 수: 5개
@@ -685,19 +794,19 @@ Summary of Representative Article – Support from SOCAR19SOCAR to provide 100 s
 
 테스트 케이스 8: SOCAR, 몽클레르, 버질 아블로 협력 관련 모든 자료
 ------------------------------------------------------------
-2025-09-12 16:51:04,365 - mcp_tools - INFO - 🔍 필터 추출 시작: 'SOCAR, 몽클레르, 버질 아블로 협력 관련 모든 자료'
-2025-09-12 16:51:05,867 - httpx - INFO - HTTP Request: POST http://10.10.190.1:8124/v1/chat/completions "HTTP/1.1 200 OK"
-2025-09-12 16:51:05,869 - mcp_tools - INFO - 🔍 데이터베이스에서 unique한 이메일 값들을 조회합니다.
-2025-09-12 16:51:05,869 - kars_db - INFO - 🔍 Unique 값 조회 시작: field=from_email, limit=50000
-2025-09-12 16:51:05,948 - kars_db - INFO - ✅ Unique 값 조회 완료: from_email 필드에서 3개 unique 값 발견
-2025-09-12 16:51:05,949 - kars_db - INFO - 🔍 Unique 값 조회 시작: field=to_email, limit=50000
-2025-09-12 16:51:06,026 - kars_db - INFO - ✅ Unique 값 조회 완료: to_email 필드에서 1개 unique 값 발견
-2025-09-12 16:51:06,026 - kars_db - INFO - 🔍 Unique 값 조회 시작: field=custodian, limit=50000
-2025-09-12 16:51:06,090 - kars_db - INFO - ✅ Unique 값 조회 완료: custodian 필드에서 1개 unique 값 발견
-2025-09-12 16:51:06,090 - kars_db - INFO - 🔍 Unique 값 조회 시작: field=last_author, limit=50000
-2025-09-12 16:51:06,170 - kars_db - INFO - ✅ Unique 값 조회 완료: last_author 필드에서 14개 unique 값 발견
-2025-09-12 16:51:06,171 - mcp_tools - INFO - ✅ Unique 이름들 조회 완료: from_email 3개, to_email 1개, custodian 1, total_last_author:  14
-2025-09-12 16:51:06,171 - mcp_tools - INFO - ✅ 필터 추출 완료: similarity 검색, 필터: custodian=None ori_file_name=None s_created_date=None sent_date=None from_email=None to_email=None cc=None bcc=None last_author=None extension=None
+2025-09-12 17:14:18,253 - mcp_tools - INFO - 🔍 필터 추출 시작: 'SOCAR, 몽클레르, 버질 아블로 협력 관련 모든 자료'
+2025-09-12 17:14:19,764 - httpx - INFO - HTTP Request: POST http://10.10.190.1:8124/v1/chat/completions "HTTP/1.1 200 OK"
+2025-09-12 17:14:19,765 - mcp_tools - INFO - 🔍 데이터베이스에서 unique한 이메일 값들을 조회합니다.
+2025-09-12 17:14:19,765 - kars_db - INFO - 🔍 Unique 값 조회 시작: field=from_email, limit=50000
+2025-09-12 17:14:19,837 - kars_db - INFO - ✅ Unique 값 조회 완료: from_email 필드에서 3개 unique 값 발견
+2025-09-12 17:14:19,837 - kars_db - INFO - 🔍 Unique 값 조회 시작: field=to_email, limit=50000
+2025-09-12 17:14:19,907 - kars_db - INFO - ✅ Unique 값 조회 완료: to_email 필드에서 1개 unique 값 발견
+2025-09-12 17:14:19,909 - kars_db - INFO - 🔍 Unique 값 조회 시작: field=custodian, limit=50000
+2025-09-12 17:14:19,976 - kars_db - INFO - ✅ Unique 값 조회 완료: custodian 필드에서 1개 unique 값 발견
+2025-09-12 17:14:19,977 - kars_db - INFO - 🔍 Unique 값 조회 시작: field=last_author, limit=50000
+2025-09-12 17:14:20,044 - kars_db - INFO - ✅ Unique 값 조회 완료: last_author 필드에서 14개 unique 값 발견
+2025-09-12 17:14:20,045 - mcp_tools - INFO - ✅ Unique 이름들 조회 완료: from_email 3개, to_email 1개, custodian 1, total_last_author:  14
+2025-09-12 17:14:20,046 - mcp_tools - INFO - ✅ 필터 추출 완료: similarity 검색, 필터: custodian=None ori_file_name=None s_created_date=None sent_date=None from_email=None to_email=None cc=None bcc=None last_author=None extension=None
 📊 추출된 필터:
   - custodian: None
   - ori_file_name: None
@@ -712,10 +821,10 @@ Summary of Representative Article – Support from SOCAR19SOCAR to provide 100 s
 🔍 검색 방식: similarity
 💭 판단 근거: 질의에서 구체적인 필터 정보를 찾을 수 없어 유사도 기반 검색을 사용합니다.
   📭 검색할 필터가 없어 단순 RAG 검색을 수행합니다.
-2025-09-12 16:51:06,171 - mcp_tools - INFO - 🔍 단순 RAG 검색 실행: 'SOCAR, 몽클레르, 버질 아블로 협력 관련 모든 자료' (limit: 5)
-2025-09-12 16:51:06,171 - kars_db - INFO - 🔍 검색 시작: 'SOCAR, 몽클레르, 버질 아블로 협력 관련 모든 자료' (limit: 5)
-2025-09-12 16:51:06,218 - weaviate_db - INFO - 🔍 검색 완료: 5개 결과 (쿼리: 'SOCAR, 몽클레르, 버질 아블로 협력 관련 모든 자료'
-2025-09-12 16:51:06,218 - kars_db - INFO - ✅ 검색 완료: 5개 결과 반환
+2025-09-12 17:14:20,046 - mcp_tools - INFO - 🔍 단순 RAG 검색 실행: 'SOCAR, 몽클레르, 버질 아블로 협력 관련 모든 자료' (limit: 5)
+2025-09-12 17:14:20,046 - kars_db - INFO - 🔍 검색 시작: 'SOCAR, 몽클레르, 버질 아블로 협력 관련 모든 자료' (limit: 5)
+2025-09-12 17:14:20,095 - weaviate_db - INFO - 🔍 검색 완료: 5개 결과 (쿼리: 'SOCAR, 몽클레르, 버질 아블로 협력 관련 모든 자료'
+2025-09-12 17:14:20,095 - kars_db - INFO - ✅ 검색 완료: 5개 결과 반환
 📊 RAG 검색 결과:
   - 성공 여부: True
   - 총 결과 수: 5개
@@ -747,19 +856,19 @@ Summary of Representative Article – Support from SOCAR19SOCAR to provide 100 s
 
 테스트 케이스 9: 전기차 관련 기술 중 MBUX, 4MATIC, 하이브리드 언급된 문서들
 ------------------------------------------------------------
-2025-09-12 16:51:06,219 - mcp_tools - INFO - 🔍 필터 추출 시작: '전기차 관련 기술 중 MBUX, 4MATIC, 하이브리드 언급된 문서들'
-2025-09-12 16:51:07,725 - httpx - INFO - HTTP Request: POST http://10.10.190.1:8124/v1/chat/completions "HTTP/1.1 200 OK"
-2025-09-12 16:51:07,727 - mcp_tools - INFO - 🔍 데이터베이스에서 unique한 이메일 값들을 조회합니다.
-2025-09-12 16:51:07,727 - kars_db - INFO - 🔍 Unique 값 조회 시작: field=from_email, limit=50000
-2025-09-12 16:51:07,802 - kars_db - INFO - ✅ Unique 값 조회 완료: from_email 필드에서 3개 unique 값 발견
-2025-09-12 16:51:07,802 - kars_db - INFO - 🔍 Unique 값 조회 시작: field=to_email, limit=50000
-2025-09-12 16:51:07,877 - kars_db - INFO - ✅ Unique 값 조회 완료: to_email 필드에서 1개 unique 값 발견
-2025-09-12 16:51:07,878 - kars_db - INFO - 🔍 Unique 값 조회 시작: field=custodian, limit=50000
-2025-09-12 16:51:07,971 - kars_db - INFO - ✅ Unique 값 조회 완료: custodian 필드에서 1개 unique 값 발견
-2025-09-12 16:51:07,971 - kars_db - INFO - 🔍 Unique 값 조회 시작: field=last_author, limit=50000
-2025-09-12 16:51:08,048 - kars_db - INFO - ✅ Unique 값 조회 완료: last_author 필드에서 14개 unique 값 발견
-2025-09-12 16:51:08,050 - mcp_tools - INFO - ✅ Unique 이름들 조회 완료: from_email 3개, to_email 1개, custodian 1, total_last_author:  14
-2025-09-12 16:51:08,050 - mcp_tools - INFO - ✅ 필터 추출 완료: similarity 검색, 필터: custodian=None ori_file_name=None s_created_date=None sent_date=None from_email=None to_email=None cc=None bcc=None last_author=None extension=None
+2025-09-12 17:14:20,096 - mcp_tools - INFO - 🔍 필터 추출 시작: '전기차 관련 기술 중 MBUX, 4MATIC, 하이브리드 언급된 문서들'
+2025-09-12 17:14:21,608 - httpx - INFO - HTTP Request: POST http://10.10.190.1:8124/v1/chat/completions "HTTP/1.1 200 OK"
+2025-09-12 17:14:21,610 - mcp_tools - INFO - 🔍 데이터베이스에서 unique한 이메일 값들을 조회합니다.
+2025-09-12 17:14:21,610 - kars_db - INFO - 🔍 Unique 값 조회 시작: field=from_email, limit=50000
+2025-09-12 17:14:21,671 - kars_db - INFO - ✅ Unique 값 조회 완료: from_email 필드에서 3개 unique 값 발견
+2025-09-12 17:14:21,672 - kars_db - INFO - 🔍 Unique 값 조회 시작: field=to_email, limit=50000
+2025-09-12 17:14:21,730 - kars_db - INFO - ✅ Unique 값 조회 완료: to_email 필드에서 1개 unique 값 발견
+2025-09-12 17:14:21,730 - kars_db - INFO - 🔍 Unique 값 조회 시작: field=custodian, limit=50000
+2025-09-12 17:14:21,773 - kars_db - INFO - ✅ Unique 값 조회 완료: custodian 필드에서 1개 unique 값 발견
+2025-09-12 17:14:21,774 - kars_db - INFO - 🔍 Unique 값 조회 시작: field=last_author, limit=50000
+2025-09-12 17:14:21,815 - kars_db - INFO - ✅ Unique 값 조회 완료: last_author 필드에서 14개 unique 값 발견
+2025-09-12 17:14:21,815 - mcp_tools - INFO - ✅ Unique 이름들 조회 완료: from_email 3개, to_email 1개, custodian 1, total_last_author:  14
+2025-09-12 17:14:21,815 - mcp_tools - INFO - ✅ 필터 추출 완료: similarity 검색, 필터: custodian=None ori_file_name=None s_created_date=None sent_date=None from_email=None to_email=None cc=None bcc=None last_author=None extension=None
 📊 추출된 필터:
   - custodian: None
   - ori_file_name: None
@@ -774,10 +883,10 @@ Summary of Representative Article – Support from SOCAR19SOCAR to provide 100 s
 🔍 검색 방식: similarity
 💭 판단 근거: 질의에서 구체적인 필터 정보를 찾을 수 없어 유사도 기반 검색을 사용합니다.
   📭 검색할 필터가 없어 단순 RAG 검색을 수행합니다.
-2025-09-12 16:51:08,050 - mcp_tools - INFO - 🔍 단순 RAG 검색 실행: '전기차 관련 기술 중 MBUX, 4MATIC, 하이브리드 언급된 문서들' (limit: 5)
-2025-09-12 16:51:08,050 - kars_db - INFO - 🔍 검색 시작: '전기차 관련 기술 중 MBUX, 4MATIC, 하이브리드 언급된 문서들' (limit: 5)
-2025-09-12 16:51:08,092 - weaviate_db - INFO - 🔍 검색 완료: 5개 결과 (쿼리: '전기차 관련 기술 중 MBUX, 4MATIC, 하이브리드 언급된 문서들'
-2025-09-12 16:51:08,092 - kars_db - INFO - ✅ 검색 완료: 5개 결과 반환
+2025-09-12 17:14:21,815 - mcp_tools - INFO - 🔍 단순 RAG 검색 실행: '전기차 관련 기술 중 MBUX, 4MATIC, 하이브리드 언급된 문서들' (limit: 5)
+2025-09-12 17:14:21,815 - kars_db - INFO - 🔍 검색 시작: '전기차 관련 기술 중 MBUX, 4MATIC, 하이브리드 언급된 문서들' (limit: 5)
+2025-09-12 17:14:21,860 - weaviate_db - INFO - 🔍 검색 완료: 5개 결과 (쿼리: '전기차 관련 기술 중 MBUX, 4MATIC, 하이브리드 언급된 문서들'
+2025-09-12 17:14:21,860 - kars_db - INFO - ✅ 검색 완료: 5개 결과 반환
 📊 RAG 검색 결과:
   - 성공 여부: True
   - 총 결과 수: 5개
@@ -814,19 +923,19 @@ Subj...
 
 테스트 케이스 10: SOCAR와의 카셰어링 서비스 협약 체결 과정
 ------------------------------------------------------------
-2025-09-12 16:51:08,093 - mcp_tools - INFO - 🔍 필터 추출 시작: 'SOCAR와의 카셰어링 서비스 협약 체결 과정'
-2025-09-12 16:51:09,601 - httpx - INFO - HTTP Request: POST http://10.10.190.1:8124/v1/chat/completions "HTTP/1.1 200 OK"
-2025-09-12 16:51:09,602 - mcp_tools - INFO - 🔍 데이터베이스에서 unique한 이메일 값들을 조회합니다.
-2025-09-12 16:51:09,602 - kars_db - INFO - 🔍 Unique 값 조회 시작: field=from_email, limit=50000
-2025-09-12 16:51:09,683 - kars_db - INFO - ✅ Unique 값 조회 완료: from_email 필드에서 3개 unique 값 발견
-2025-09-12 16:51:09,683 - kars_db - INFO - 🔍 Unique 값 조회 시작: field=to_email, limit=50000
-2025-09-12 16:51:09,760 - kars_db - INFO - ✅ Unique 값 조회 완료: to_email 필드에서 1개 unique 값 발견
-2025-09-12 16:51:09,760 - kars_db - INFO - 🔍 Unique 값 조회 시작: field=custodian, limit=50000
-2025-09-12 16:51:09,826 - kars_db - INFO - ✅ Unique 값 조회 완료: custodian 필드에서 1개 unique 값 발견
-2025-09-12 16:51:09,827 - kars_db - INFO - 🔍 Unique 값 조회 시작: field=last_author, limit=50000
-2025-09-12 16:51:09,905 - kars_db - INFO - ✅ Unique 값 조회 완료: last_author 필드에서 14개 unique 값 발견
-2025-09-12 16:51:09,905 - mcp_tools - INFO - ✅ Unique 이름들 조회 완료: from_email 3개, to_email 1개, custodian 1, total_last_author:  14
-2025-09-12 16:51:09,905 - mcp_tools - INFO - ✅ 필터 추출 완료: similarity 검색, 필터: custodian=None ori_file_name=None s_created_date=None sent_date=None from_email=None to_email=None cc=None bcc=None last_author=None extension=None
+2025-09-12 17:14:21,860 - mcp_tools - INFO - 🔍 필터 추출 시작: 'SOCAR와의 카셰어링 서비스 협약 체결 과정'
+2025-09-12 17:14:23,372 - httpx - INFO - HTTP Request: POST http://10.10.190.1:8124/v1/chat/completions "HTTP/1.1 200 OK"
+2025-09-12 17:14:23,374 - mcp_tools - INFO - 🔍 데이터베이스에서 unique한 이메일 값들을 조회합니다.
+2025-09-12 17:14:23,374 - kars_db - INFO - 🔍 Unique 값 조회 시작: field=from_email, limit=50000
+2025-09-12 17:14:23,448 - kars_db - INFO - ✅ Unique 값 조회 완료: from_email 필드에서 3개 unique 값 발견
+2025-09-12 17:14:23,448 - kars_db - INFO - 🔍 Unique 값 조회 시작: field=to_email, limit=50000
+2025-09-12 17:14:23,509 - kars_db - INFO - ✅ Unique 값 조회 완료: to_email 필드에서 1개 unique 값 발견
+2025-09-12 17:14:23,509 - kars_db - INFO - 🔍 Unique 값 조회 시작: field=custodian, limit=50000
+2025-09-12 17:14:23,581 - kars_db - INFO - ✅ Unique 값 조회 완료: custodian 필드에서 1개 unique 값 발견
+2025-09-12 17:14:23,582 - kars_db - INFO - 🔍 Unique 값 조회 시작: field=last_author, limit=50000
+2025-09-12 17:14:23,650 - kars_db - INFO - ✅ Unique 값 조회 완료: last_author 필드에서 14개 unique 값 발견
+2025-09-12 17:14:23,650 - mcp_tools - INFO - ✅ Unique 이름들 조회 완료: from_email 3개, to_email 1개, custodian 1, total_last_author:  14
+2025-09-12 17:14:23,650 - mcp_tools - INFO - ✅ 필터 추출 완료: similarity 검색, 필터: custodian=None ori_file_name=None s_created_date=None sent_date=None from_email=None to_email=None cc=None bcc=None last_author=None extension=None
 📊 추출된 필터:
   - custodian: None
   - ori_file_name: None
@@ -841,10 +950,10 @@ Subj...
 🔍 검색 방식: similarity
 💭 판단 근거: 질의에서 구체적인 필터 정보를 찾을 수 없어 유사도 기반 검색을 사용합니다.
   📭 검색할 필터가 없어 단순 RAG 검색을 수행합니다.
-2025-09-12 16:51:09,906 - mcp_tools - INFO - 🔍 단순 RAG 검색 실행: 'SOCAR와의 카셰어링 서비스 협약 체결 과정' (limit: 5)
-2025-09-12 16:51:09,906 - kars_db - INFO - 🔍 검색 시작: 'SOCAR와의 카셰어링 서비스 협약 체결 과정' (limit: 5)
-2025-09-12 16:51:09,948 - weaviate_db - INFO - 🔍 검색 완료: 5개 결과 (쿼리: 'SOCAR와의 카셰어링 서비스 협약 체결 과정'
-2025-09-12 16:51:09,948 - kars_db - INFO - ✅ 검색 완료: 5개 결과 반환
+2025-09-12 17:14:23,650 - mcp_tools - INFO - 🔍 단순 RAG 검색 실행: 'SOCAR와의 카셰어링 서비스 협약 체결 과정' (limit: 5)
+2025-09-12 17:14:23,651 - kars_db - INFO - 🔍 검색 시작: 'SOCAR와의 카셰어링 서비스 협약 체결 과정' (limit: 5)
+2025-09-12 17:14:23,683 - weaviate_db - INFO - 🔍 검색 완료: 5개 결과 (쿼리: 'SOCAR와의 카셰어링 서비스 협약 체결 과정'
+2025-09-12 17:14:23,683 - kars_db - INFO - ✅ 검색 완료: 5개 결과 반환
 📊 RAG 검색 결과:
   - 성공 여부: True
   - 총 결과 수: 5개
@@ -882,19 +991,19 @@ Subject:[Press Release] Mercedes-Benz Korea...
 
 테스트 케이스 11: EQC 모델의 국내 시장 출시 및 홍보 활동
 ------------------------------------------------------------
-2025-09-12 16:51:09,949 - mcp_tools - INFO - 🔍 필터 추출 시작: 'EQC 모델의 국내 시장 출시 및 홍보 활동'
-2025-09-12 16:51:11,456 - httpx - INFO - HTTP Request: POST http://10.10.190.1:8124/v1/chat/completions "HTTP/1.1 200 OK"
-2025-09-12 16:51:11,458 - mcp_tools - INFO - 🔍 데이터베이스에서 unique한 이메일 값들을 조회합니다.
-2025-09-12 16:51:11,458 - kars_db - INFO - 🔍 Unique 값 조회 시작: field=from_email, limit=50000
-2025-09-12 16:51:11,533 - kars_db - INFO - ✅ Unique 값 조회 완료: from_email 필드에서 3개 unique 값 발견
-2025-09-12 16:51:11,534 - kars_db - INFO - 🔍 Unique 값 조회 시작: field=to_email, limit=50000
-2025-09-12 16:51:11,614 - kars_db - INFO - ✅ Unique 값 조회 완료: to_email 필드에서 1개 unique 값 발견
-2025-09-12 16:51:11,614 - kars_db - INFO - 🔍 Unique 값 조회 시작: field=custodian, limit=50000
-2025-09-12 16:51:11,692 - kars_db - INFO - ✅ Unique 값 조회 완료: custodian 필드에서 1개 unique 값 발견
-2025-09-12 16:51:11,692 - kars_db - INFO - 🔍 Unique 값 조회 시작: field=last_author, limit=50000
-2025-09-12 16:51:11,767 - kars_db - INFO - ✅ Unique 값 조회 완료: last_author 필드에서 14개 unique 값 발견
-2025-09-12 16:51:11,767 - mcp_tools - INFO - ✅ Unique 이름들 조회 완료: from_email 3개, to_email 1개, custodian 1, total_last_author:  14
-2025-09-12 16:51:11,767 - mcp_tools - INFO - ✅ 필터 추출 완료: similarity 검색, 필터: custodian=None ori_file_name=None s_created_date=None sent_date=None from_email=None to_email=None cc=None bcc=None last_author=None extension=None
+2025-09-12 17:14:23,683 - mcp_tools - INFO - 🔍 필터 추출 시작: 'EQC 모델의 국내 시장 출시 및 홍보 활동'
+2025-09-12 17:14:25,195 - httpx - INFO - HTTP Request: POST http://10.10.190.1:8124/v1/chat/completions "HTTP/1.1 200 OK"
+2025-09-12 17:14:25,196 - mcp_tools - INFO - 🔍 데이터베이스에서 unique한 이메일 값들을 조회합니다.
+2025-09-12 17:14:25,196 - kars_db - INFO - 🔍 Unique 값 조회 시작: field=from_email, limit=50000
+2025-09-12 17:14:25,274 - kars_db - INFO - ✅ Unique 값 조회 완료: from_email 필드에서 3개 unique 값 발견
+2025-09-12 17:14:25,274 - kars_db - INFO - 🔍 Unique 값 조회 시작: field=to_email, limit=50000
+2025-09-12 17:14:25,342 - kars_db - INFO - ✅ Unique 값 조회 완료: to_email 필드에서 1개 unique 값 발견
+2025-09-12 17:14:25,342 - kars_db - INFO - 🔍 Unique 값 조회 시작: field=custodian, limit=50000
+2025-09-12 17:14:25,411 - kars_db - INFO - ✅ Unique 값 조회 완료: custodian 필드에서 1개 unique 값 발견
+2025-09-12 17:14:25,411 - kars_db - INFO - 🔍 Unique 값 조회 시작: field=last_author, limit=50000
+2025-09-12 17:14:25,491 - kars_db - INFO - ✅ Unique 값 조회 완료: last_author 필드에서 14개 unique 값 발견
+2025-09-12 17:14:25,492 - mcp_tools - INFO - ✅ Unique 이름들 조회 완료: from_email 3개, to_email 1개, custodian 1, total_last_author:  14
+2025-09-12 17:14:25,492 - mcp_tools - INFO - ✅ 필터 추출 완료: similarity 검색, 필터: custodian=None ori_file_name=None s_created_date=None sent_date=None from_email=None to_email=None cc=None bcc=None last_author=None extension=None
 📊 추출된 필터:
   - custodian: None
   - ori_file_name: None
@@ -909,10 +1018,10 @@ Subject:[Press Release] Mercedes-Benz Korea...
 🔍 검색 방식: similarity
 💭 판단 근거: 질의에서 구체적인 필터 정보를 찾을 수 없어 유사도 기반 검색을 사용합니다.
   📭 검색할 필터가 없어 단순 RAG 검색을 수행합니다.
-2025-09-12 16:51:11,768 - mcp_tools - INFO - 🔍 단순 RAG 검색 실행: 'EQC 모델의 국내 시장 출시 및 홍보 활동' (limit: 5)
-2025-09-12 16:51:11,768 - kars_db - INFO - 🔍 검색 시작: 'EQC 모델의 국내 시장 출시 및 홍보 활동' (limit: 5)
-2025-09-12 16:51:11,803 - weaviate_db - INFO - 🔍 검색 완료: 5개 결과 (쿼리: 'EQC 모델의 국내 시장 출시 및 홍보 활동'
-2025-09-12 16:51:11,803 - kars_db - INFO - ✅ 검색 완료: 5개 결과 반환
+2025-09-12 17:14:25,492 - mcp_tools - INFO - 🔍 단순 RAG 검색 실행: 'EQC 모델의 국내 시장 출시 및 홍보 활동' (limit: 5)
+2025-09-12 17:14:25,492 - kars_db - INFO - 🔍 검색 시작: 'EQC 모델의 국내 시장 출시 및 홍보 활동' (limit: 5)
+2025-09-12 17:14:25,524 - weaviate_db - INFO - 🔍 검색 완료: 5개 결과 (쿼리: 'EQC 모델의 국내 시장 출시 및 홍보 활동'
+2025-09-12 17:14:25,524 - kars_db - INFO - ✅ 검색 완료: 5개 결과 반환
 📊 RAG 검색 결과:
   - 성공 여부: True
   - 총 결과 수: 5개
@@ -944,19 +1053,19 @@ Subject:[Press Release] Mercedes-Benz Korea...
 
 테스트 케이스 12: 메르세데스-벤츠의 전동화 전략 및 기술 로드맵
 ------------------------------------------------------------
-2025-09-12 16:51:11,803 - mcp_tools - INFO - 🔍 필터 추출 시작: '메르세데스-벤츠의 전동화 전략 및 기술 로드맵'
-2025-09-12 16:51:13,311 - httpx - INFO - HTTP Request: POST http://10.10.190.1:8124/v1/chat/completions "HTTP/1.1 200 OK"
-2025-09-12 16:51:13,313 - mcp_tools - INFO - 🔍 데이터베이스에서 unique한 이메일 값들을 조회합니다.
-2025-09-12 16:51:13,313 - kars_db - INFO - 🔍 Unique 값 조회 시작: field=from_email, limit=50000
-2025-09-12 16:51:13,387 - kars_db - INFO - ✅ Unique 값 조회 완료: from_email 필드에서 3개 unique 값 발견
-2025-09-12 16:51:13,387 - kars_db - INFO - 🔍 Unique 값 조회 시작: field=to_email, limit=50000
-2025-09-12 16:51:13,464 - kars_db - INFO - ✅ Unique 값 조회 완료: to_email 필드에서 1개 unique 값 발견
-2025-09-12 16:51:13,464 - kars_db - INFO - 🔍 Unique 값 조회 시작: field=custodian, limit=50000
-2025-09-12 16:51:13,535 - kars_db - INFO - ✅ Unique 값 조회 완료: custodian 필드에서 1개 unique 값 발견
-2025-09-12 16:51:13,535 - kars_db - INFO - 🔍 Unique 값 조회 시작: field=last_author, limit=50000
-2025-09-12 16:51:13,610 - kars_db - INFO - ✅ Unique 값 조회 완료: last_author 필드에서 14개 unique 값 발견
-2025-09-12 16:51:13,610 - mcp_tools - INFO - ✅ Unique 이름들 조회 완료: from_email 3개, to_email 1개, custodian 1, total_last_author:  14
-2025-09-12 16:51:13,610 - mcp_tools - INFO - ✅ 필터 추출 완료: similarity 검색, 필터: custodian=None ori_file_name=None s_created_date=None sent_date=None from_email=None to_email=None cc=None bcc=None last_author=None extension=None
+2025-09-12 17:14:25,524 - mcp_tools - INFO - 🔍 필터 추출 시작: '메르세데스-벤츠의 전동화 전략 및 기술 로드맵'
+2025-09-12 17:14:27,038 - httpx - INFO - HTTP Request: POST http://10.10.190.1:8124/v1/chat/completions "HTTP/1.1 200 OK"
+2025-09-12 17:14:27,040 - mcp_tools - INFO - 🔍 데이터베이스에서 unique한 이메일 값들을 조회합니다.
+2025-09-12 17:14:27,040 - kars_db - INFO - 🔍 Unique 값 조회 시작: field=from_email, limit=50000
+2025-09-12 17:14:27,120 - kars_db - INFO - ✅ Unique 값 조회 완료: from_email 필드에서 3개 unique 값 발견
+2025-09-12 17:14:27,120 - kars_db - INFO - 🔍 Unique 값 조회 시작: field=to_email, limit=50000
+2025-09-12 17:14:27,185 - kars_db - INFO - ✅ Unique 값 조회 완료: to_email 필드에서 1개 unique 값 발견
+2025-09-12 17:14:27,186 - kars_db - INFO - 🔍 Unique 값 조회 시작: field=custodian, limit=50000
+2025-09-12 17:14:27,260 - kars_db - INFO - ✅ Unique 값 조회 완료: custodian 필드에서 1개 unique 값 발견
+2025-09-12 17:14:27,261 - kars_db - INFO - 🔍 Unique 값 조회 시작: field=last_author, limit=50000
+2025-09-12 17:14:27,321 - kars_db - INFO - ✅ Unique 값 조회 완료: last_author 필드에서 14개 unique 값 발견
+2025-09-12 17:14:27,323 - mcp_tools - INFO - ✅ Unique 이름들 조회 완료: from_email 3개, to_email 1개, custodian 1, total_last_author:  14
+2025-09-12 17:14:27,323 - mcp_tools - INFO - ✅ 필터 추출 완료: similarity 검색, 필터: custodian=None ori_file_name=None s_created_date=None sent_date=None from_email=None to_email=None cc=None bcc=None last_author=None extension=None
 📊 추출된 필터:
   - custodian: None
   - ori_file_name: None
@@ -971,10 +1080,10 @@ Subject:[Press Release] Mercedes-Benz Korea...
 🔍 검색 방식: similarity
 💭 판단 근거: 질의에서 구체적인 필터 정보를 찾을 수 없어 유사도 기반 검색을 사용합니다.
   📭 검색할 필터가 없어 단순 RAG 검색을 수행합니다.
-2025-09-12 16:51:13,611 - mcp_tools - INFO - 🔍 단순 RAG 검색 실행: '메르세데스-벤츠의 전동화 전략 및 기술 로드맵' (limit: 5)
-2025-09-12 16:51:13,611 - kars_db - INFO - 🔍 검색 시작: '메르세데스-벤츠의 전동화 전략 및 기술 로드맵' (limit: 5)
-2025-09-12 16:51:13,652 - weaviate_db - INFO - 🔍 검색 완료: 5개 결과 (쿼리: '메르세데스-벤츠의 전동화 전략 및 기술 로드맵'
-2025-09-12 16:51:13,652 - kars_db - INFO - ✅ 검색 완료: 5개 결과 반환
+2025-09-12 17:14:27,323 - mcp_tools - INFO - 🔍 단순 RAG 검색 실행: '메르세데스-벤츠의 전동화 전략 및 기술 로드맵' (limit: 5)
+2025-09-12 17:14:27,323 - kars_db - INFO - 🔍 검색 시작: '메르세데스-벤츠의 전동화 전략 및 기술 로드맵' (limit: 5)
+2025-09-12 17:14:27,362 - weaviate_db - INFO - 🔍 검색 완료: 5개 결과 (쿼리: '메르세데스-벤츠의 전동화 전략 및 기술 로드맵'
+2025-09-12 17:14:27,362 - kars_db - INFO - ✅ 검색 완료: 5개 결과 반환
 📊 RAG 검색 결과:
   - 성공 여부: True
   - 총 결과 수: 5개
@@ -1008,7 +1117,7 @@ Subject:[Press Release] Mercedes-Benz Korea...
 /raid1/workspace/kars-agent/weaviate-mcp/.venv/lib/python3.12/site-packages/weaviate/warnings.py:302: ResourceWarning: Con004: The connection to Weaviate was not closed properly. This can lead to memory leaks.
             Please make sure to close the connection using `client.close()`.
   warnings.warn(
-/raid1/workspace/kars-agent/weaviate-mcp/tmp_sungwon_chae/test_extract_value_tool_modified.py:316: ResourceWarning: unclosed <socket.socket fd=9, family=2, type=1, proto=6, laddr=('10.10.150.195', 52020), raddr=('10.10.150.195', 8080)>
+/raid1/workspace/kars-agent/weaviate-mcp/tmp_sungwon_chae/test_extract_value_tool_modified.py:472: ResourceWarning: unclosed <socket.socket fd=9, family=2, type=1, proto=6, laddr=('10.10.150.195', 33030), raddr=('10.10.150.195', 8080)>
   await test_extract_filter()
 ResourceWarning: Enable tracemalloc to get the object allocation traceback
 
@@ -1016,51 +1125,51 @@ ResourceWarning: Enable tracemalloc to get the object allocation traceback
 
 🔍 이름 매칭 기능 테스트 시작
 
-2025-09-12 16:51:13,687 - mcp_tools - INFO - Weaviate MCP 도구 초기화 완료
+2025-09-12 17:14:27,398 - mcp_tools - INFO - Weaviate MCP 도구 초기화 완료
 👤 1단계: 데이터베이스의 unique한 이름 값들 조회
 ------------------------------------------------------------
-2025-09-12 16:51:13,687 - kars_db - INFO - 🚀 RAG 벡터 데이터베이스 초기화 시작
-2025-09-12 16:51:13,687 - simple_manager - INFO - Weaviate URL: http://10.10.150.195:8080
-2025-09-12 16:51:13,687 - simple_manager - INFO - OpenAI Base URL: http://10.10.190.1:8125
-2025-09-12 16:51:13,687 - kars_db - INFO - ✅ VectorDB 매니저 초기화 완료
-2025-09-12 16:51:13,715 - httpx - INFO - HTTP Request: GET http://10.10.190.1:8125/v1/models "HTTP/1.1 200 OK"
-2025-09-12 16:51:13,716 - weaviate_db - INFO - ✅ vLLM 서버에서 모델명 가져옴: /data/models_ckpt/bge-m3
-2025-09-12 16:51:13,727 - httpx - INFO - HTTP Request: POST http://10.10.190.1:8125/v1/embeddings "HTTP/1.1 200 OK"
-2025-09-12 16:51:13,728 - weaviate_db - INFO - ✅ 샘플 임베딩 생성 성공 (차원: 1024)
-2025-09-12 16:51:13,770 - httpx - INFO - HTTP Request: GET http://10.10.150.195:8080/v1/.well-known/openid-configuration "HTTP/1.1 404 Not Found"
-2025-09-12 16:51:13,795 - httpx - INFO - HTTP Request: GET http://10.10.150.195:8080/v1/meta "HTTP/1.1 200 OK"
-2025-09-12 16:51:15,826 - weaviate_db - INFO - ✅ Weaviate 클라이언트 연결 성공: http://10.10.150.195:8080
-2025-09-12 16:51:15,826 - weaviate_db - INFO - 📡 OpenAI Base URL (Python용): http://10.10.190.1:8125/v1
-2025-09-12 16:51:15,826 - weaviate_db - INFO - 📡 OpenAI Base URL (Weaviate용): http://10.10.190.1:8125
-2025-09-12 16:51:15,826 - weaviate_db - INFO - 🔧 동적 모델명: /data/models_ckpt/bge-m3
-2025-09-12 16:51:15,826 - simple_manager - INFO - DB 연결 초기화 완료
-2025-09-12 16:51:15,830 - httpx - INFO - HTTP Request: GET http://10.10.150.195:8080/v1/schema "HTTP/1.1 200 OK"
-2025-09-12 16:51:15,834 - httpx - INFO - HTTP Request: GET http://10.10.150.195:8080/v1/schema/DocumentChunk "HTTP/1.1 200 OK"
-2025-09-12 16:51:15,838 - httpx - INFO - HTTP Request: GET http://10.10.150.195:8080/v1/schema/EnronDocument "HTTP/1.1 200 OK"
-2025-09-12 16:51:15,840 - weaviate_db - INFO - 스키마 조회 완료: 2개 클래스
-2025-09-12 16:51:15,840 - simple_manager - WARNING - 클래스 매핑 파일이 없습니다. 기본 규칙을 사용합니다.
-2025-09-12 16:51:15,840 - simple_manager - INFO - 기존 클래스 등록: chunk_db -> DocumentChunk
-2025-09-12 16:51:15,840 - simple_manager - INFO - 기존 클래스 등록: enron_db -> EnronDocument
-2025-09-12 16:51:15,840 - simple_manager - INFO - 총 2개 DB에 클래스 등록 완료
-2025-09-12 16:51:15,840 - simple_manager - INFO -   chunk_db: ['DocumentChunk']
-2025-09-12 16:51:15,840 - simple_manager - INFO -   enron_db: ['EnronDocument']
-2025-09-12 16:51:15,844 - httpx - INFO - HTTP Request: GET http://10.10.150.195:8080/v1/schema "HTTP/1.1 200 OK"
-2025-09-12 16:51:15,848 - httpx - INFO - HTTP Request: GET http://10.10.150.195:8080/v1/schema/DocumentChunk "HTTP/1.1 200 OK"
-2025-09-12 16:51:15,851 - httpx - INFO - HTTP Request: GET http://10.10.150.195:8080/v1/schema/EnronDocument "HTTP/1.1 200 OK"
-2025-09-12 16:51:15,852 - weaviate_db - INFO - 스키마 조회 완료: 2개 클래스
-2025-09-12 16:51:15,853 - kars_db - INFO - 📊 사용 가능한 클래스들: ['DocumentChunk', 'EnronDocument']
-2025-09-12 16:51:15,853 - kars_db - INFO - ✅ 사용할 클래스명: DocumentChunk
-2025-09-12 16:51:15,853 - mcp_tools - INFO - ✅ RAG 데이터베이스 초기화 성공: kars_test
-2025-09-12 16:51:15,853 - mcp_tools - INFO - 🔍 데이터베이스에서 unique한 이메일 값들을 조회합니다.
-2025-09-12 16:51:15,853 - kars_db - INFO - 🔍 Unique 값 조회 시작: field=from_email, limit=50000
-2025-09-12 16:51:15,928 - kars_db - INFO - ✅ Unique 값 조회 완료: from_email 필드에서 3개 unique 값 발견
-2025-09-12 16:51:15,928 - kars_db - INFO - 🔍 Unique 값 조회 시작: field=to_email, limit=50000
-2025-09-12 16:51:16,006 - kars_db - INFO - ✅ Unique 값 조회 완료: to_email 필드에서 1개 unique 값 발견
-2025-09-12 16:51:16,006 - kars_db - INFO - 🔍 Unique 값 조회 시작: field=custodian, limit=50000
-2025-09-12 16:51:16,078 - kars_db - INFO - ✅ Unique 값 조회 완료: custodian 필드에서 1개 unique 값 발견
-2025-09-12 16:51:16,078 - kars_db - INFO - 🔍 Unique 값 조회 시작: field=last_author, limit=50000
-2025-09-12 16:51:16,145 - kars_db - INFO - ✅ Unique 값 조회 완료: last_author 필드에서 14개 unique 값 발견
-2025-09-12 16:51:16,145 - mcp_tools - INFO - ✅ Unique 이름들 조회 완료: from_email 3개, to_email 1개, custodian 1, total_last_author:  14
+2025-09-12 17:14:27,398 - kars_db - INFO - 🚀 RAG 벡터 데이터베이스 초기화 시작
+2025-09-12 17:14:27,398 - simple_manager - INFO - Weaviate URL: http://10.10.150.195:8080
+2025-09-12 17:14:27,398 - simple_manager - INFO - OpenAI Base URL: http://10.10.190.1:8125
+2025-09-12 17:14:27,398 - kars_db - INFO - ✅ VectorDB 매니저 초기화 완료
+2025-09-12 17:14:27,427 - httpx - INFO - HTTP Request: GET http://10.10.190.1:8125/v1/models "HTTP/1.1 200 OK"
+2025-09-12 17:14:27,427 - weaviate_db - INFO - ✅ vLLM 서버에서 모델명 가져옴: /data/models_ckpt/bge-m3
+2025-09-12 17:14:27,439 - httpx - INFO - HTTP Request: POST http://10.10.190.1:8125/v1/embeddings "HTTP/1.1 200 OK"
+2025-09-12 17:14:27,440 - weaviate_db - INFO - ✅ 샘플 임베딩 생성 성공 (차원: 1024)
+2025-09-12 17:14:27,483 - httpx - INFO - HTTP Request: GET http://10.10.150.195:8080/v1/.well-known/openid-configuration "HTTP/1.1 404 Not Found"
+2025-09-12 17:14:27,509 - httpx - INFO - HTTP Request: GET http://10.10.150.195:8080/v1/meta "HTTP/1.1 200 OK"
+2025-09-12 17:14:29,540 - weaviate_db - INFO - ✅ Weaviate 클라이언트 연결 성공: http://10.10.150.195:8080
+2025-09-12 17:14:29,540 - weaviate_db - INFO - 📡 OpenAI Base URL (Python용): http://10.10.190.1:8125/v1
+2025-09-12 17:14:29,540 - weaviate_db - INFO - 📡 OpenAI Base URL (Weaviate용): http://10.10.190.1:8125
+2025-09-12 17:14:29,540 - weaviate_db - INFO - 🔧 동적 모델명: /data/models_ckpt/bge-m3
+2025-09-12 17:14:29,541 - simple_manager - INFO - DB 연결 초기화 완료
+2025-09-12 17:14:29,544 - httpx - INFO - HTTP Request: GET http://10.10.150.195:8080/v1/schema "HTTP/1.1 200 OK"
+2025-09-12 17:14:29,549 - httpx - INFO - HTTP Request: GET http://10.10.150.195:8080/v1/schema/DocumentChunk "HTTP/1.1 200 OK"
+2025-09-12 17:14:29,552 - httpx - INFO - HTTP Request: GET http://10.10.150.195:8080/v1/schema/EnronDocument "HTTP/1.1 200 OK"
+2025-09-12 17:14:29,554 - weaviate_db - INFO - 스키마 조회 완료: 2개 클래스
+2025-09-12 17:14:29,554 - simple_manager - WARNING - 클래스 매핑 파일이 없습니다. 기본 규칙을 사용합니다.
+2025-09-12 17:14:29,554 - simple_manager - INFO - 기존 클래스 등록: chunk_db -> DocumentChunk
+2025-09-12 17:14:29,554 - simple_manager - INFO - 기존 클래스 등록: enron_db -> EnronDocument
+2025-09-12 17:14:29,554 - simple_manager - INFO - 총 2개 DB에 클래스 등록 완료
+2025-09-12 17:14:29,554 - simple_manager - INFO -   chunk_db: ['DocumentChunk']
+2025-09-12 17:14:29,554 - simple_manager - INFO -   enron_db: ['EnronDocument']
+2025-09-12 17:14:29,557 - httpx - INFO - HTTP Request: GET http://10.10.150.195:8080/v1/schema "HTTP/1.1 200 OK"
+2025-09-12 17:14:29,561 - httpx - INFO - HTTP Request: GET http://10.10.150.195:8080/v1/schema/DocumentChunk "HTTP/1.1 200 OK"
+2025-09-12 17:14:29,565 - httpx - INFO - HTTP Request: GET http://10.10.150.195:8080/v1/schema/EnronDocument "HTTP/1.1 200 OK"
+2025-09-12 17:14:29,566 - weaviate_db - INFO - 스키마 조회 완료: 2개 클래스
+2025-09-12 17:14:29,566 - kars_db - INFO - 📊 사용 가능한 클래스들: ['DocumentChunk', 'EnronDocument']
+2025-09-12 17:14:29,566 - kars_db - INFO - ✅ 사용할 클래스명: DocumentChunk
+2025-09-12 17:14:29,566 - mcp_tools - INFO - ✅ RAG 데이터베이스 초기화 성공: kars_test
+2025-09-12 17:14:29,566 - mcp_tools - INFO - 🔍 데이터베이스에서 unique한 이메일 값들을 조회합니다.
+2025-09-12 17:14:29,566 - kars_db - INFO - 🔍 Unique 값 조회 시작: field=from_email, limit=50000
+2025-09-12 17:14:29,642 - kars_db - INFO - ✅ Unique 값 조회 완료: from_email 필드에서 3개 unique 값 발견
+2025-09-12 17:14:29,642 - kars_db - INFO - 🔍 Unique 값 조회 시작: field=to_email, limit=50000
+2025-09-12 17:14:29,721 - kars_db - INFO - ✅ Unique 값 조회 완료: to_email 필드에서 1개 unique 값 발견
+2025-09-12 17:14:29,721 - kars_db - INFO - 🔍 Unique 값 조회 시작: field=custodian, limit=50000
+2025-09-12 17:14:29,782 - kars_db - INFO - ✅ Unique 값 조회 완료: custodian 필드에서 1개 unique 값 발견
+2025-09-12 17:14:29,782 - kars_db - INFO - 🔍 Unique 값 조회 시작: field=last_author, limit=50000
+2025-09-12 17:14:29,848 - kars_db - INFO - ✅ Unique 값 조회 완료: last_author 필드에서 14개 unique 값 발견
+2025-09-12 17:14:29,848 - mcp_tools - INFO - ✅ Unique 이름들 조회 완료: from_email 3개, to_email 1개, custodian 1, total_last_author:  14
 ✅ Unique 이름 조회 성공!
   - from_email 개수: 3개
   - to_email 개수: 1개
@@ -1092,24 +1201,197 @@ ResourceWarning: Enable tracemalloc to get the object allocation traceback
 
 ================================================================================
 
-🔍 2단계: 이름 유사도 매칭 테스트
+�� 2단계: 이름 유사도 매칭 테스트 (MBG 실제 인물 기반)
 ------------------------------------------------------------
 
-🧪 테스트 케이스 1: 한글 이름으로 검색
-   입력: '조효원'
+🧪 테스트 케이스 1: 메르세데스-벤츠 코리아 대표이사
+   입력: 'Dimitris Psillakis'
 --------------------------------------------------
-2025-09-12 16:51:16,146 - mcp_tools - INFO - 🔍 데이터베이스에서 unique한 이메일 값들을 조회합니다.
-2025-09-12 16:51:16,146 - kars_db - INFO - 🔍 Unique 값 조회 시작: field=from_email, limit=50000
-2025-09-12 16:51:16,210 - kars_db - INFO - ✅ Unique 값 조회 완료: from_email 필드에서 3개 unique 값 발견
-2025-09-12 16:51:16,210 - kars_db - INFO - 🔍 Unique 값 조회 시작: field=to_email, limit=50000
-2025-09-12 16:51:16,288 - kars_db - INFO - ✅ Unique 값 조회 완료: to_email 필드에서 1개 unique 값 발견
-2025-09-12 16:51:16,289 - kars_db - INFO - 🔍 Unique 값 조회 시작: field=custodian, limit=50000
-2025-09-12 16:51:16,368 - kars_db - INFO - ✅ Unique 값 조회 완료: custodian 필드에서 1개 unique 값 발견
-2025-09-12 16:51:16,368 - kars_db - INFO - 🔍 Unique 값 조회 시작: field=last_author, limit=50000
-2025-09-12 16:51:16,442 - kars_db - INFO - ✅ Unique 값 조회 완료: last_author 필드에서 14개 unique 값 발견
-2025-09-12 16:51:16,442 - mcp_tools - INFO - ✅ Unique 이름들 조회 완료: from_email 3개, to_email 1개, custodian 1, total_last_author:  14
-2025-09-12 16:51:23,571 - httpx - INFO - HTTP Request: POST http://10.10.190.1:8124/v1/chat/completions "HTTP/1.1 200 OK"
-2025-09-12 16:51:23,573 - mcp_tools - INFO - ✅ 이메일 유사도 매칭 완료: '조효원' → 5개 매치
+2025-09-12 17:14:29,849 - mcp_tools - INFO - 🔍 데이터베이스에서 unique한 이메일 값들을 조회합니다.
+2025-09-12 17:14:29,849 - kars_db - INFO - 🔍 Unique 값 조회 시작: field=from_email, limit=50000
+2025-09-12 17:14:29,910 - kars_db - INFO - ✅ Unique 값 조회 완료: from_email 필드에서 3개 unique 값 발견
+2025-09-12 17:14:29,910 - kars_db - INFO - 🔍 Unique 값 조회 시작: field=to_email, limit=50000
+2025-09-12 17:14:29,985 - kars_db - INFO - ✅ Unique 값 조회 완료: to_email 필드에서 1개 unique 값 발견
+2025-09-12 17:14:29,985 - kars_db - INFO - 🔍 Unique 값 조회 시작: field=custodian, limit=50000
+2025-09-12 17:14:30,052 - kars_db - INFO - ✅ Unique 값 조회 완료: custodian 필드에서 1개 unique 값 발견
+2025-09-12 17:14:30,052 - kars_db - INFO - 🔍 Unique 값 조회 시작: field=last_author, limit=50000
+2025-09-12 17:14:30,115 - kars_db - INFO - ✅ Unique 값 조회 완료: last_author 필드에서 14개 unique 값 발견
+2025-09-12 17:14:30,115 - mcp_tools - INFO - ✅ Unique 이름들 조회 완료: from_email 3개, to_email 1개, custodian 1, total_last_author:  14
+2025-09-12 17:14:30,393 - httpx - INFO - HTTP Request: POST http://10.10.190.1:8124/v1/chat/completions "HTTP/1.1 200 OK"
+2025-09-12 17:14:30,394 - mcp_tools - INFO - ✅ 이메일 유사도 매칭 완료: 'Dimitris Psillakis' → 0개 매치
+✅ 매칭 성공!
+  - 총 후보 수: 17개
+  - 매치 결과: 0개
+  - 검색 필드 타입: all
+  📭 매치 결과가 없습니다.
+
+
+🧪 테스트 케이스 2: 메르세데스-벤츠 코리아 영업 부문 부사장
+   입력: 'Lee Sang-kuk'
+--------------------------------------------------
+2025-09-12 17:14:30,395 - mcp_tools - INFO - 🔍 데이터베이스에서 unique한 이메일 값들을 조회합니다.
+2025-09-12 17:14:30,395 - kars_db - INFO - 🔍 Unique 값 조회 시작: field=from_email, limit=50000
+2025-09-12 17:14:30,489 - kars_db - INFO - ✅ Unique 값 조회 완료: from_email 필드에서 3개 unique 값 발견
+2025-09-12 17:14:30,490 - kars_db - INFO - 🔍 Unique 값 조회 시작: field=to_email, limit=50000
+2025-09-12 17:14:30,553 - kars_db - INFO - ✅ Unique 값 조회 완료: to_email 필드에서 1개 unique 값 발견
+2025-09-12 17:14:30,553 - kars_db - INFO - 🔍 Unique 값 조회 시작: field=custodian, limit=50000
+2025-09-12 17:14:30,625 - kars_db - INFO - ✅ Unique 값 조회 완료: custodian 필드에서 1개 unique 값 발견
+2025-09-12 17:14:30,625 - kars_db - INFO - 🔍 Unique 값 조회 시작: field=last_author, limit=50000
+2025-09-12 17:14:30,691 - kars_db - INFO - ✅ Unique 값 조회 완료: last_author 필드에서 14개 unique 값 발견
+2025-09-12 17:14:30,691 - mcp_tools - INFO - ✅ Unique 이름들 조회 완료: from_email 3개, to_email 1개, custodian 1, total_last_author:  14
+2025-09-12 17:14:37,645 - httpx - INFO - HTTP Request: POST http://10.10.190.1:8124/v1/chat/completions "HTTP/1.1 200 OK"
+2025-09-12 17:14:37,647 - mcp_tools - INFO - ✅ 이메일 유사도 매칭 완료: 'Lee Sang-kuk' → 5개 매치
+✅ 매칭 성공!
+  - 총 후보 수: 17개
+  - 매치 결과: 5개
+  - 검색 필드 타입: all
+
+🎯 매치 결과:
+  1. NaN
+     - 유사도 점수: 0
+     - 매칭 타입: partial
+     - 매칭 이유: 입력된 이름과 관련된 정보가 없습니다.
+  2. Microsoft® Word Microsoft 365용
+     - 유사도 점수: 0
+     - 매칭 타입: partial
+     - 매칭 이유: 입력된 이름과 관련된 정보가 없습니다.
+  3. Microsoft® Word 2016
+     - 유사도 점수: 0
+     - 매칭 타입: partial
+     - 매칭 이유: 입력된 이름과 관련된 정보가 없습니다.
+  4. Microsoft® Word for Microsoft 365
+     - 유사도 점수: 0
+     - 매칭 타입: partial
+     - 매칭 이유: 입력된 이름과 관련된 정보가 없습니다.
+  5. 䵩捲潳潦璮⁗潲搠㈰ㄶ㬠浯摩晩敤⁵獩湧⁩呥硴卨慲瀮䱇偌瘲⹃潲攠ㄮ㘮ㄮ
+     - 유사도 점수: 0
+     - 매칭 타입: partial
+     - 매칭 이유: 입력된 이름과 관련된 정보가 없습니다.
+
+
+🧪 테스트 케이스 3: Lee Sang-kuk의 한국어 이름
+   입력: '이상국'
+--------------------------------------------------
+2025-09-12 17:14:37,648 - mcp_tools - INFO - 🔍 데이터베이스에서 unique한 이메일 값들을 조회합니다.
+2025-09-12 17:14:37,648 - kars_db - INFO - 🔍 Unique 값 조회 시작: field=from_email, limit=50000
+2025-09-12 17:14:37,723 - kars_db - INFO - ✅ Unique 값 조회 완료: from_email 필드에서 3개 unique 값 발견
+2025-09-12 17:14:37,723 - kars_db - INFO - 🔍 Unique 값 조회 시작: field=to_email, limit=50000
+2025-09-12 17:14:37,770 - kars_db - INFO - ✅ Unique 값 조회 완료: to_email 필드에서 1개 unique 값 발견
+2025-09-12 17:14:37,771 - kars_db - INFO - 🔍 Unique 값 조회 시작: field=custodian, limit=50000
+2025-09-12 17:14:37,841 - kars_db - INFO - ✅ Unique 값 조회 완료: custodian 필드에서 1개 unique 값 발견
+2025-09-12 17:14:37,841 - kars_db - INFO - 🔍 Unique 값 조회 시작: field=last_author, limit=50000
+2025-09-12 17:14:37,914 - kars_db - INFO - ✅ Unique 값 조회 완료: last_author 필드에서 14개 unique 값 발견
+2025-09-12 17:14:37,914 - mcp_tools - INFO - ✅ Unique 이름들 조회 완료: from_email 3개, to_email 1개, custodian 1, total_last_author:  14
+2025-09-12 17:14:38,191 - httpx - INFO - HTTP Request: POST http://10.10.190.1:8124/v1/chat/completions "HTTP/1.1 200 OK"
+2025-09-12 17:14:38,192 - mcp_tools - INFO - ✅ 이메일 유사도 매칭 완료: '이상국' → 0개 매치
+✅ 매칭 성공!
+  - 총 후보 수: 17개
+  - 매치 결과: 0개
+  - 검색 필드 타입: all
+  📭 매치 결과가 없습니다.
+
+
+🧪 테스트 케이스 4: SOCAR 부사장
+   입력: 'Wi Hyun-jong'
+--------------------------------------------------
+2025-09-12 17:14:38,193 - mcp_tools - INFO - 🔍 데이터베이스에서 unique한 이메일 값들을 조회합니다.
+2025-09-12 17:14:38,193 - kars_db - INFO - 🔍 Unique 값 조회 시작: field=from_email, limit=50000
+2025-09-12 17:14:38,257 - kars_db - INFO - ✅ Unique 값 조회 완료: from_email 필드에서 3개 unique 값 발견
+2025-09-12 17:14:38,257 - kars_db - INFO - 🔍 Unique 값 조회 시작: field=to_email, limit=50000
+2025-09-12 17:14:38,328 - kars_db - INFO - ✅ Unique 값 조회 완료: to_email 필드에서 1개 unique 값 발견
+2025-09-12 17:14:38,328 - kars_db - INFO - 🔍 Unique 값 조회 시작: field=custodian, limit=50000
+2025-09-12 17:14:38,375 - kars_db - INFO - ✅ Unique 값 조회 완료: custodian 필드에서 1개 unique 값 발견
+2025-09-12 17:14:38,375 - kars_db - INFO - 🔍 Unique 값 조회 시작: field=last_author, limit=50000
+2025-09-12 17:14:38,450 - kars_db - INFO - ✅ Unique 값 조회 완료: last_author 필드에서 14개 unique 값 발견
+2025-09-12 17:14:38,451 - mcp_tools - INFO - ✅ Unique 이름들 조회 완료: from_email 3개, to_email 1개, custodian 1, total_last_author:  14
+2025-09-12 17:14:47,070 - httpx - INFO - HTTP Request: POST http://10.10.190.1:8124/v1/chat/completions "HTTP/1.1 200 OK"
+2025-09-12 17:14:47,071 - mcp_tools - INFO - ✅ 이메일 유사도 매칭 완료: 'Wi Hyun-jong' → 5개 매치
+✅ 매칭 성공!
+  - 총 후보 수: 17개
+  - 매치 결과: 5개
+  - 검색 필드 타입: all
+
+🎯 매치 결과:
+  1. Ju, Hyeyeon (191-Extern-MBK)
+     - 유사도 점수: 30.0
+     - 매칭 타입: partial
+     - 매칭 이유: 이름의 일부가 유사함 (Hyeyeon과 Hyun-jong의 철자가 부분적으로 일치)
+  2. Shim, Ellen (191)
+     - 유사도 점수: 30.0
+     - 매칭 타입: partial
+     - 매칭 이유: 이름의 일부가 유사함 (Ellen과 Hyun-jong의 철자가 부분적으로 일치)
+  3. Jeong, Yeeun (191) on behalf of korea_com (191-NPM)
+     - 유사도 점수: 30.0
+     - 매칭 타입: partial
+     - 매칭 이유: 이름의 일부가 유사함 (Yeeun과 Hyun-jong의 철자가 부분적으로 일치)
+  4. Song, Jieun (691)
+     - 유사도 점수: 30.0
+     - 매칭 타입: partial
+     - 매칭 이유: 이름의 일부가 유사함 (Jieun과 Hyun-jong의 철자가 부분적으로 일치)
+  5. Song, Jieun (191)
+     - 유사도 점수: 30.0
+     - 매칭 타입: partial
+     - 매칭 이유: 이름의 일부가 유사함 (Jieun과 Hyun-jong의 철자가 부분적으로 일치)
+
+
+🧪 테스트 케이스 5: Wi Hyun-jong의 한국어 이름
+   입력: '위현종'
+--------------------------------------------------
+2025-09-12 17:14:47,072 - mcp_tools - INFO - 🔍 데이터베이스에서 unique한 이메일 값들을 조회합니다.
+2025-09-12 17:14:47,072 - kars_db - INFO - 🔍 Unique 값 조회 시작: field=from_email, limit=50000
+2025-09-12 17:14:47,148 - kars_db - INFO - ✅ Unique 값 조회 완료: from_email 필드에서 3개 unique 값 발견
+2025-09-12 17:14:47,148 - kars_db - INFO - 🔍 Unique 값 조회 시작: field=to_email, limit=50000
+2025-09-12 17:14:47,226 - kars_db - INFO - ✅ Unique 값 조회 완료: to_email 필드에서 1개 unique 값 발견
+2025-09-12 17:14:47,226 - kars_db - INFO - 🔍 Unique 값 조회 시작: field=custodian, limit=50000
+2025-09-12 17:14:47,291 - kars_db - INFO - ✅ Unique 값 조회 완료: custodian 필드에서 1개 unique 값 발견
+2025-09-12 17:14:47,291 - kars_db - INFO - 🔍 Unique 값 조회 시작: field=last_author, limit=50000
+2025-09-12 17:14:47,363 - kars_db - INFO - ✅ Unique 값 조회 완료: last_author 필드에서 14개 unique 값 발견
+2025-09-12 17:14:47,363 - mcp_tools - INFO - ✅ Unique 이름들 조회 완료: from_email 3개, to_email 1개, custodian 1, total_last_author:  14
+2025-09-12 17:14:54,366 - httpx - INFO - HTTP Request: POST http://10.10.190.1:8124/v1/chat/completions "HTTP/1.1 200 OK"
+2025-09-12 17:14:54,367 - mcp_tools - INFO - ✅ 이메일 유사도 매칭 완료: '위현종' → 5개 매치
+✅ 매칭 성공!
+  - 총 후보 수: 17개
+  - 매치 결과: 5개
+  - 검색 필드 타입: all
+
+🎯 매치 결과:
+  1. NaN
+     - 유사도 점수: 0
+     - 매칭 타입: partial
+     - 매칭 이유: 입력된 이름과 관련된 정보가 없습니다.
+  2. Microsoft® Word Microsoft 365용
+     - 유사도 점수: 0
+     - 매칭 타입: partial
+     - 매칭 이유: 입력된 이름과 관련된 정보가 없습니다.
+  3. Microsoft® Word 2016
+     - 유사도 점수: 0
+     - 매칭 타입: partial
+     - 매칭 이유: 입력된 이름과 관련된 정보가 없습니다.
+  4. Microsoft® Word for Microsoft 365
+     - 유사도 점수: 0
+     - 매칭 타입: partial
+     - 매칭 이유: 입력된 이름과 관련된 정보가 없습니다.
+  5. 䵩捲潳潦璮⁗潲搠㈰ㄶ㬠浯摩晩敤⁵獩湧⁩呥硴卨慲瀮䱇偌瘲⹃潲攠ㄮ㘮ㄮ
+     - 유사도 점수: 0
+     - 매칭 타입: partial
+     - 매칭 이유: 입력된 이름과 관련된 정보가 없습니다.
+
+
+🧪 테스트 케이스 6: 메르세데스-벤츠 코리아 홍보팀
+   입력: 'Yun-ju Hwang'
+--------------------------------------------------
+2025-09-12 17:14:54,368 - mcp_tools - INFO - 🔍 데이터베이스에서 unique한 이메일 값들을 조회합니다.
+2025-09-12 17:14:54,368 - kars_db - INFO - 🔍 Unique 값 조회 시작: field=from_email, limit=50000
+2025-09-12 17:14:54,441 - kars_db - INFO - ✅ Unique 값 조회 완료: from_email 필드에서 3개 unique 값 발견
+2025-09-12 17:14:54,441 - kars_db - INFO - 🔍 Unique 값 조회 시작: field=to_email, limit=50000
+2025-09-12 17:14:54,503 - kars_db - INFO - ✅ Unique 값 조회 완료: to_email 필드에서 1개 unique 값 발견
+2025-09-12 17:14:54,503 - kars_db - INFO - 🔍 Unique 값 조회 시작: field=custodian, limit=50000
+2025-09-12 17:14:54,567 - kars_db - INFO - ✅ Unique 값 조회 완료: custodian 필드에서 1개 unique 값 발견
+2025-09-12 17:14:54,567 - kars_db - INFO - 🔍 Unique 값 조회 시작: field=last_author, limit=50000
+2025-09-12 17:14:54,655 - kars_db - INFO - ✅ Unique 값 조회 완료: last_author 필드에서 14개 unique 값 발견
+2025-09-12 17:14:54,655 - mcp_tools - INFO - ✅ Unique 이름들 조회 완료: from_email 3개, to_email 1개, custodian 1, total_last_author:  14
+2025-09-12 17:15:01,942 - httpx - INFO - HTTP Request: POST http://10.10.190.1:8124/v1/chat/completions "HTTP/1.1 200 OK"
+2025-09-12 17:15:01,944 - mcp_tools - INFO - ✅ 이메일 유사도 매칭 완료: 'Yun-ju Hwang' → 5개 매치
 ✅ 매칭 성공!
   - 총 후보 수: 17개
   - 매치 결과: 5개
@@ -1119,241 +1401,876 @@ ResourceWarning: Enable tracemalloc to get the object allocation traceback
   1. Ju, Hyeyeon (191-Extern-MBK)
      - 유사도 점수: 90.0
      - 매칭 타입: name_similar
-     - 매칭 이유: 이름의 순서가 바뀐 경우 (예: '조효원' ↔ '효원 조')
-  2. Jeong, Yeeun (191)
+     - 매칭 이유: 이름의 순서가 바뀐 경우 (예: 'Hyeyeon Ju' ↔ 'Ju, Hyeyeon')
+  2. Jeong, Yeeun (191) on behalf of korea_com (191-NPM)
      - 유사도 점수: 30.0
      - 매칭 타입: partial
      - 매칭 이유: 이름의 일부가 일치하거나 유사
-  3. Jeong, Yeeun (191) on behalf of korea_com (191-NPM)
+  3. Jeong, Yeeun (691)
      - 유사도 점수: 30.0
      - 매칭 타입: partial
      - 매칭 이유: 이름의 일부가 일치하거나 유사
-  4. Song, Jieun (691)
-     - 유사도 점수: 30.0
-     - 매칭 타입: partial
-     - 매칭 이유: 이름의 일부가 일치하거나 유사
-  5. Song, Jieun (191)
-     - 유사도 점수: 30.0
-     - 매칭 타입: partial
-     - 매칭 이유: 이름의 일부가 일치하거나 유사
-
-
-🧪 테스트 케이스 2: 영어 이름으로 검색
-   입력: 'hyowon cho'
---------------------------------------------------
-2025-09-12 16:51:23,574 - mcp_tools - INFO - 🔍 데이터베이스에서 unique한 이메일 값들을 조회합니다.
-2025-09-12 16:51:23,574 - kars_db - INFO - 🔍 Unique 값 조회 시작: field=from_email, limit=50000
-2025-09-12 16:51:23,649 - kars_db - INFO - ✅ Unique 값 조회 완료: from_email 필드에서 3개 unique 값 발견
-2025-09-12 16:51:23,649 - kars_db - INFO - 🔍 Unique 값 조회 시작: field=to_email, limit=50000
-2025-09-12 16:51:23,698 - kars_db - INFO - ✅ Unique 값 조회 완료: to_email 필드에서 1개 unique 값 발견
-2025-09-12 16:51:23,698 - kars_db - INFO - 🔍 Unique 값 조회 시작: field=custodian, limit=50000
-2025-09-12 16:51:23,777 - kars_db - INFO - ✅ Unique 값 조회 완료: custodian 필드에서 1개 unique 값 발견
-2025-09-12 16:51:23,777 - kars_db - INFO - 🔍 Unique 값 조회 시작: field=last_author, limit=50000
-2025-09-12 16:51:23,872 - kars_db - INFO - ✅ Unique 값 조회 완료: last_author 필드에서 14개 unique 값 발견
-2025-09-12 16:51:23,872 - mcp_tools - INFO - ✅ Unique 이름들 조회 완료: from_email 3개, to_email 1개, custodian 1, total_last_author:  14
-2025-09-12 16:51:30,928 - httpx - INFO - HTTP Request: POST http://10.10.190.1:8124/v1/chat/completions "HTTP/1.1 200 OK"
-2025-09-12 16:51:30,930 - mcp_tools - INFO - ✅ 이메일 유사도 매칭 완료: 'hyowon cho' → 5개 매치
-✅ 매칭 성공!
-  - 총 후보 수: 17개
-  - 매치 결과: 5개
-  - 검색 필드 타입: all
-
-🎯 매치 결과:
-  1. 조효원
-     - 유사도 점수: 100.0
-     - 매칭 타입: exact
-     - 매칭 이유: 이름이 완전히 일치합니다.
-  2. hyowon cho (KC)
-     - 유사도 점수: 100.0
-     - 매칭 타입: exact
-     - 매칭 이유: 이름이 완전히 일치하며, 약어나 별칭이 포함되어 있습니다.
-  3. Cho, Hyowon
-     - 유사도 점수: 90.0
-     - 매칭 타입: name_similar
-     - 매칭 이유: 이름의 순서가 바뀐 경우이며, 영어 이름과 한글 이름이 매칭됩니다.
-  4. Hyowon Cho
-     - 유사도 점수: 90.0
-     - 매칭 타입: name_similar
-     - 매칭 이유: 이름의 순서가 바뀐 경우이며, 영어 이름과 한글 이름이 매칭됩니다.
-  5. hyowoncho@example.com
-     - 유사도 점수: 80.0
-     - 매칭 타입: username
-     - 매칭 이유: 이메일의 @ 앞 부분이 'hyowoncho'로 일치합니다.
-
-
-🧪 테스트 케이스 3: 이름 순서가 바뀐 경우
-   입력: '효원 조'
---------------------------------------------------
-2025-09-12 16:51:30,931 - mcp_tools - INFO - 🔍 데이터베이스에서 unique한 이메일 값들을 조회합니다.
-2025-09-12 16:51:30,931 - kars_db - INFO - 🔍 Unique 값 조회 시작: field=from_email, limit=50000
-2025-09-12 16:51:31,006 - kars_db - INFO - ✅ Unique 값 조회 완료: from_email 필드에서 3개 unique 값 발견
-2025-09-12 16:51:31,006 - kars_db - INFO - 🔍 Unique 값 조회 시작: field=to_email, limit=50000
-2025-09-12 16:51:31,079 - kars_db - INFO - ✅ Unique 값 조회 완료: to_email 필드에서 1개 unique 값 발견
-2025-09-12 16:51:31,079 - kars_db - INFO - 🔍 Unique 값 조회 시작: field=custodian, limit=50000
-2025-09-12 16:51:31,140 - kars_db - INFO - ✅ Unique 값 조회 완료: custodian 필드에서 1개 unique 값 발견
-2025-09-12 16:51:31,140 - kars_db - INFO - 🔍 Unique 값 조회 시작: field=last_author, limit=50000
-2025-09-12 16:51:31,214 - kars_db - INFO - ✅ Unique 값 조회 완료: last_author 필드에서 14개 unique 값 발견
-2025-09-12 16:51:31,214 - mcp_tools - INFO - ✅ Unique 이름들 조회 완료: from_email 3개, to_email 1개, custodian 1, total_last_author:  14
-2025-09-12 16:51:38,395 - httpx - INFO - HTTP Request: POST http://10.10.190.1:8124/v1/chat/completions "HTTP/1.1 200 OK"
-2025-09-12 16:51:38,397 - mcp_tools - INFO - ✅ 이메일 유사도 매칭 완료: '효원 조' → 5개 매치
-✅ 매칭 성공!
-  - 총 후보 수: 17개
-  - 매치 결과: 5개
-  - 검색 필드 타입: all
-
-🎯 매치 결과:
-  1. Ju, Hyeyeon (191-Extern-MBK)
-     - 유사도 점수: 90.0
-     - 매칭 타입: name_similar
-     - 매칭 이유: 이름의 순서가 바뀐 경우 (예: '조효원' ↔ '효원 조')
-  2. Jeong, Yeeun (191)
-     - 유사도 점수: 30.0
-     - 매칭 타입: partial
-     - 매칭 이유: 이름의 일부가 일치하거나 유사
-  3. Jeong, Yeeun (191) on behalf of korea_com (191-NPM)
-     - 유사도 점수: 30.0
-     - 매칭 타입: partial
-     - 매칭 이유: 이름의 일부가 일치하거나 유사
-  4. Song, Jieun (691)
-     - 유사도 점수: 30.0
-     - 매칭 타입: partial
-     - 매칭 이유: 이름의 일부가 일치하거나 유사
-  5. Song, Jieun (191)
-     - 유사도 점수: 30.0
-     - 매칭 타입: partial
-     - 매칭 이유: 이름의 일부가 일치하거나 유사
-
-
-🧪 테스트 케이스 4: 약어/별칭이 포함된 경우
-   입력: 'hyowon cho (KC)'
---------------------------------------------------
-2025-09-12 16:51:38,397 - mcp_tools - INFO - 🔍 데이터베이스에서 unique한 이메일 값들을 조회합니다.
-2025-09-12 16:51:38,397 - kars_db - INFO - 🔍 Unique 값 조회 시작: field=from_email, limit=50000
-2025-09-12 16:51:38,456 - kars_db - INFO - ✅ Unique 값 조회 완료: from_email 필드에서 3개 unique 값 발견
-2025-09-12 16:51:38,456 - kars_db - INFO - 🔍 Unique 값 조회 시작: field=to_email, limit=50000
-2025-09-12 16:51:38,527 - kars_db - INFO - ✅ Unique 값 조회 완료: to_email 필드에서 1개 unique 값 발견
-2025-09-12 16:51:38,527 - kars_db - INFO - 🔍 Unique 값 조회 시작: field=custodian, limit=50000
-2025-09-12 16:51:38,589 - kars_db - INFO - ✅ Unique 값 조회 완료: custodian 필드에서 1개 unique 값 발견
-2025-09-12 16:51:38,589 - kars_db - INFO - 🔍 Unique 값 조회 시작: field=last_author, limit=50000
-2025-09-12 16:51:38,662 - kars_db - INFO - ✅ Unique 값 조회 완료: last_author 필드에서 14개 unique 값 발견
-2025-09-12 16:51:38,662 - mcp_tools - INFO - ✅ Unique 이름들 조회 완료: from_email 3개, to_email 1개, custodian 1, total_last_author:  14
-2025-09-12 16:51:45,315 - httpx - INFO - HTTP Request: POST http://10.10.190.1:8124/v1/chat/completions "HTTP/1.1 200 OK"
-2025-09-12 16:51:45,317 - mcp_tools - INFO - ✅ 이메일 유사도 매칭 완료: 'hyowon cho (KC)' → 5개 매치
-✅ 매칭 성공!
-  - 총 후보 수: 17개
-  - 매치 결과: 5개
-  - 검색 필드 타입: all
-
-🎯 매치 결과:
-  1. 세진 김
-     - 유사도 점수: 30.0
-     - 매칭 타입: partial
-     - 매칭 이유: 이름의 일부가 일치하거나 유사
-  2. Ju, Hyeyeon (191-Extern-MBK)
-     - 유사도 점수: 30.0
-     - 매칭 타입: partial
-     - 매칭 이유: 이름의 일부가 일치하거나 유사
-  3. Shim, Ellen (191)
-     - 유사도 점수: 30.0
-     - 매칭 타입: partial
-     - 매칭 이유: 이름의 일부가 일치하거나 유사
-  4. Jeong, Yeeun (191) on behalf of korea_com (191-NPM)
-     - 유사도 점수: 30.0
-     - 매칭 타입: partial
-     - 매칭 이유: 이름의 일부가 일치하거나 유사
-  5. Jeong, Yeeun (691)
-     - 유사도 점수: 30.0
-     - 매칭 타입: partial
-     - 매칭 이유: 이름의 일부가 일치하거나 유사
-
-
-🧪 테스트 케이스 5: 일반적인 한글 이름
-   입력: '김철수'
---------------------------------------------------
-2025-09-12 16:51:45,317 - mcp_tools - INFO - 🔍 데이터베이스에서 unique한 이메일 값들을 조회합니다.
-2025-09-12 16:51:45,317 - kars_db - INFO - 🔍 Unique 값 조회 시작: field=from_email, limit=50000
-2025-09-12 16:51:45,395 - kars_db - INFO - ✅ Unique 값 조회 완료: from_email 필드에서 3개 unique 값 발견
-2025-09-12 16:51:45,396 - kars_db - INFO - 🔍 Unique 값 조회 시작: field=to_email, limit=50000
-2025-09-12 16:51:45,469 - kars_db - INFO - ✅ Unique 값 조회 완료: to_email 필드에서 1개 unique 값 발견
-2025-09-12 16:51:45,470 - kars_db - INFO - 🔍 Unique 값 조회 시작: field=custodian, limit=50000
-2025-09-12 16:51:45,548 - kars_db - INFO - ✅ Unique 값 조회 완료: custodian 필드에서 1개 unique 값 발견
-2025-09-12 16:51:45,549 - kars_db - INFO - 🔍 Unique 값 조회 시작: field=last_author, limit=50000
-2025-09-12 16:51:45,628 - kars_db - INFO - ✅ Unique 값 조회 완료: last_author 필드에서 14개 unique 값 발견
-2025-09-12 16:51:45,629 - mcp_tools - INFO - ✅ Unique 이름들 조회 완료: from_email 3개, to_email 1개, custodian 1, total_last_author:  14
-2025-09-12 16:51:53,932 - httpx - INFO - HTTP Request: POST http://10.10.190.1:8124/v1/chat/completions "HTTP/1.1 200 OK"
-2025-09-12 16:51:53,933 - mcp_tools - INFO - ✅ 이메일 유사도 매칭 완료: '김철수' → 5개 매치
-✅ 매칭 성공!
-  - 총 후보 수: 17개
-  - 매치 결과: 5개
-  - 검색 필드 타입: all
-
-🎯 매치 결과:
-  1. 세진 김
-     - 유사도 점수: 90.0
-     - 매칭 타입: name_similar
-     - 매칭 이유: 이름의 순서가 바뀐 경우입니다. '김철수'와 '세진 김'은 같은 이름으로 간주할 수 있습니다.
-  2. Kim, Ji-Hyun (191)
-     - 유사도 점수: 30.0
-     - 매칭 타입: partial
-     - 매칭 이유: 이름의 일부가 일치합니다. '김' 성은 일치하지만, 'Ji-Hyun'은 '철수'와 다릅니다.
-  3. Park, Jaekyung (191)
-     - 유사도 점수: 30.0
-     - 매칭 타입: partial
-     - 매칭 이유: 이름의 일부가 일치합니다. 'Park'은 '김'과 다릅니다.
   4. Shim, Ellen (191)
      - 유사도 점수: 30.0
      - 매칭 타입: partial
-     - 매칭 이유: 이름의 일부가 일치합니다. 'Shim'은 '김'과 다릅니다.
-  5. Ju, Hyeyeon (191-Extern-MBK)
+     - 매칭 이유: 이름의 일부가 일치하거나 유사
+  5. Song, Jieun (191)
      - 유사도 점수: 30.0
      - 매칭 타입: partial
-     - 매칭 이유: 이름의 일부가 일치합니다. 'Ju'는 '김'과 다릅니다.
+     - 매칭 이유: 이름의 일부가 일치하거나 유사
 
 
-🧪 테스트 케이스 6: 영어 이름 (하이픈 포함)
-   입력: 'Park Young-hee'
+🧪 테스트 케이스 7: Yun-ju Hwang의 한국어 이름
+   입력: '황윤주'
 --------------------------------------------------
-2025-09-12 16:51:53,934 - mcp_tools - INFO - 🔍 데이터베이스에서 unique한 이메일 값들을 조회합니다.
-2025-09-12 16:51:53,934 - kars_db - INFO - 🔍 Unique 값 조회 시작: field=from_email, limit=50000
-2025-09-12 16:51:54,009 - kars_db - INFO - ✅ Unique 값 조회 완료: from_email 필드에서 3개 unique 값 발견
-2025-09-12 16:51:54,009 - kars_db - INFO - 🔍 Unique 값 조회 시작: field=to_email, limit=50000
-2025-09-12 16:51:54,089 - kars_db - INFO - ✅ Unique 값 조회 완료: to_email 필드에서 1개 unique 값 발견
-2025-09-12 16:51:54,089 - kars_db - INFO - 🔍 Unique 값 조회 시작: field=custodian, limit=50000
-2025-09-12 16:51:54,156 - kars_db - INFO - ✅ Unique 값 조회 완료: custodian 필드에서 1개 unique 값 발견
-2025-09-12 16:51:54,156 - kars_db - INFO - 🔍 Unique 값 조회 시작: field=last_author, limit=50000
-2025-09-12 16:51:54,226 - kars_db - INFO - ✅ Unique 값 조회 완료: last_author 필드에서 14개 unique 값 발견
-2025-09-12 16:51:54,226 - mcp_tools - INFO - ✅ Unique 이름들 조회 완료: from_email 3개, to_email 1개, custodian 1, total_last_author:  14
-2025-09-12 16:52:02,982 - httpx - INFO - HTTP Request: POST http://10.10.190.1:8124/v1/chat/completions "HTTP/1.1 200 OK"
-2025-09-12 16:52:02,983 - mcp_tools - INFO - ✅ 이메일 유사도 매칭 완료: 'Park Young-hee' → 5개 매치
+2025-09-12 17:15:01,945 - mcp_tools - INFO - 🔍 데이터베이스에서 unique한 이메일 값들을 조회합니다.
+2025-09-12 17:15:01,945 - kars_db - INFO - 🔍 Unique 값 조회 시작: field=from_email, limit=50000
+2025-09-12 17:15:02,023 - kars_db - INFO - ✅ Unique 값 조회 완료: from_email 필드에서 3개 unique 값 발견
+2025-09-12 17:15:02,023 - kars_db - INFO - 🔍 Unique 값 조회 시작: field=to_email, limit=50000
+2025-09-12 17:15:02,094 - kars_db - INFO - ✅ Unique 값 조회 완료: to_email 필드에서 1개 unique 값 발견
+2025-09-12 17:15:02,094 - kars_db - INFO - 🔍 Unique 값 조회 시작: field=custodian, limit=50000
+2025-09-12 17:15:02,155 - kars_db - INFO - ✅ Unique 값 조회 완료: custodian 필드에서 1개 unique 값 발견
+2025-09-12 17:15:02,155 - kars_db - INFO - 🔍 Unique 값 조회 시작: field=last_author, limit=50000
+2025-09-12 17:15:02,227 - kars_db - INFO - ✅ Unique 값 조회 완료: last_author 필드에서 14개 unique 값 발견
+2025-09-12 17:15:02,227 - mcp_tools - INFO - ✅ Unique 이름들 조회 완료: from_email 3개, to_email 1개, custodian 1, total_last_author:  14
+2025-09-12 17:15:08,721 - httpx - INFO - HTTP Request: POST http://10.10.190.1:8124/v1/chat/completions "HTTP/1.1 200 OK"
+2025-09-12 17:15:08,722 - mcp_tools - INFO - ✅ 이메일 유사도 매칭 완료: '황윤주' → 5개 매치
 ✅ 매칭 성공!
   - 총 후보 수: 17개
   - 매치 결과: 5개
   - 검색 필드 타입: all
 
 🎯 매치 결과:
-  1. Park, Sep (191) on behalf of korea_com (191-NPM)
-     - 유사도 점수: 90.0
-     - 매칭 타입: name_similar
-     - 매칭 이유: 이름의 성이 'Park'으로 일치하며, 이름의 순서가 바뀐 경우로 간주됩니다.
-  2. Park, Jaekyung (191)
-     - 유사도 점수: 90.0
-     - 매칭 타입: name_similar
-     - 매칭 이유: 이름의 성이 'Park'으로 일치하며, 이름의 순서가 바뀐 경우로 간주됩니다.
-  3. Shim, Ellen (191)
+  1. Ju, Hyeyeon (191-Extern-MBK)
      - 유사도 점수: 30.0
      - 매칭 타입: partial
-     - 매칭 이유: 이름의 일부가 'Ellen'로, 'Young-hee'와 부분적으로 유사할 수 있습니다.
+     - 매칭 이유: 이름의 일부가 일치
+  2. Joo, Jaeyool (191)
+     - 유사도 점수: 30.0
+     - 매칭 타입: partial
+     - 매칭 이유: 이름의 일부가 일치
+  3. Jeong, Yeeun (191) on behalf of korea_com (191-NPM)
+     - 유사도 점수: 30.0
+     - 매칭 타입: partial
+     - 매칭 이유: 이름의 일부가 일치
+  4. Jeong, Yeeun (691)
+     - 유사도 점수: 30.0
+     - 매칭 타입: partial
+     - 매칭 이유: 이름의 일부가 일치
+  5. Song, Jieun (191)
+     - 유사도 점수: 30.0
+     - 매칭 타입: partial
+     - 매칭 이유: 이름의 일부가 일치
+
+
+🧪 테스트 케이스 8: 메르세데스-벤츠 코리아 홍보팀
+   입력: 'Jieun Song'
+--------------------------------------------------
+2025-09-12 17:15:08,723 - mcp_tools - INFO - 🔍 데이터베이스에서 unique한 이메일 값들을 조회합니다.
+2025-09-12 17:15:08,723 - kars_db - INFO - 🔍 Unique 값 조회 시작: field=from_email, limit=50000
+2025-09-12 17:15:08,798 - kars_db - INFO - ✅ Unique 값 조회 완료: from_email 필드에서 3개 unique 값 발견
+2025-09-12 17:15:08,798 - kars_db - INFO - 🔍 Unique 값 조회 시작: field=to_email, limit=50000
+2025-09-12 17:15:08,874 - kars_db - INFO - ✅ Unique 값 조회 완료: to_email 필드에서 1개 unique 값 발견
+2025-09-12 17:15:08,874 - kars_db - INFO - 🔍 Unique 값 조회 시작: field=custodian, limit=50000
+2025-09-12 17:15:08,947 - kars_db - INFO - ✅ Unique 값 조회 완료: custodian 필드에서 1개 unique 값 발견
+2025-09-12 17:15:08,947 - kars_db - INFO - 🔍 Unique 값 조회 시작: field=last_author, limit=50000
+2025-09-12 17:15:09,008 - kars_db - INFO - ✅ Unique 값 조회 완료: last_author 필드에서 14개 unique 값 발견
+2025-09-12 17:15:09,008 - mcp_tools - INFO - ✅ Unique 이름들 조회 완료: from_email 3개, to_email 1개, custodian 1, total_last_author:  14
+2025-09-12 17:15:20,908 - httpx - INFO - HTTP Request: POST http://10.10.190.1:8124/v1/chat/completions "HTTP/1.1 200 OK"
+2025-09-12 17:15:20,910 - mcp_tools - INFO - ✅ 이메일 유사도 매칭 완료: 'Jieun Song' → 5개 매치
+✅ 매칭 성공!
+  - 총 후보 수: 17개
+  - 매치 결과: 5개
+  - 검색 필드 타입: all
+
+🎯 매치 결과:
+  1. Song, Jieun (691)
+     - 유사도 점수: 100.0
+     - 매칭 타입: exact
+     - 매칭 이유: 이름이 완전히 일치합니다. 'Jieun Song'과 'Song, Jieun'은 같은 이름이며, 순서가 바뀐 경우에도 정확한 일치로 간주됩니다.
+  2. Song, Jieun (191)
+     - 유사도 점수: 100.0
+     - 매칭 타입: exact
+     - 매칭 이유: 이름이 완전히 일치합니다. 'Jieun Song'과 'Song, Jieun'은 같은 이름이며, 순서가 바뀐 경우에도 정확한 일치로 간주됩니다.
+  3. Jeong, Yeeun (691)
+     - 유사도 점수: 90.0
+     - 매칭 타입: name_similar
+     - 매칭 이유: 이름의 일부가 유사합니다. 'Jieun'과 'Yeeun'은 발음이 유사하며, 'Song'과 'Jeong'은 성씨가 다릅니다. 이는 이름 유사로 간주됩니다.
+  4. Jeong, Yeeun (191) on behalf of korea_com (191-NPM)
+     - 유사도 점수: 90.0
+     - 매칭 타입: name_similar
+     - 매칭 이유: 이름의 일부가 유사합니다. 'Jieun'과 'Yeeun'은 발음이 유사하며, 'Song'과 'Jeong'은 성씨가 다릅니다. 이는 이름 유사로 간주됩니다.
+  5. Joo, Jaeyool (191)
+     - 유사도 점수: 30.0
+     - 매칭 타입: partial
+     - 매칭 이유: 이름의 일부가 일치합니다. 'Jieun'과 'Jaeyool'은 일부가 유사하지만, 전체적으로는 다릅니다. 이는 부분 일치로 간주됩니다.
+
+
+🧪 테스트 케이스 9: Jieun Song의 한국어 이름
+   입력: '송지은'
+--------------------------------------------------
+2025-09-12 17:15:20,910 - mcp_tools - INFO - 🔍 데이터베이스에서 unique한 이메일 값들을 조회합니다.
+2025-09-12 17:15:20,910 - kars_db - INFO - 🔍 Unique 값 조회 시작: field=from_email, limit=50000
+2025-09-12 17:15:20,984 - kars_db - INFO - ✅ Unique 값 조회 완료: from_email 필드에서 3개 unique 값 발견
+2025-09-12 17:15:20,984 - kars_db - INFO - 🔍 Unique 값 조회 시작: field=to_email, limit=50000
+2025-09-12 17:15:21,063 - kars_db - INFO - ✅ Unique 값 조회 완료: to_email 필드에서 1개 unique 값 발견
+2025-09-12 17:15:21,063 - kars_db - INFO - 🔍 Unique 값 조회 시작: field=custodian, limit=50000
+2025-09-12 17:15:21,134 - kars_db - INFO - ✅ Unique 값 조회 완료: custodian 필드에서 1개 unique 값 발견
+2025-09-12 17:15:21,134 - kars_db - INFO - 🔍 Unique 값 조회 시작: field=last_author, limit=50000
+2025-09-12 17:15:21,207 - kars_db - INFO - ✅ Unique 값 조회 완료: last_author 필드에서 14개 unique 값 발견
+2025-09-12 17:15:21,207 - mcp_tools - INFO - ✅ Unique 이름들 조회 완료: from_email 3개, to_email 1개, custodian 1, total_last_author:  14
+2025-09-12 17:15:31,188 - httpx - INFO - HTTP Request: POST http://10.10.190.1:8124/v1/chat/completions "HTTP/1.1 200 OK"
+2025-09-12 17:15:31,190 - mcp_tools - INFO - ✅ 이메일 유사도 매칭 완료: '송지은' → 5개 매치
+✅ 매칭 성공!
+  - 총 후보 수: 17개
+  - 매치 결과: 5개
+  - 검색 필드 타입: all
+
+🎯 매치 결과:
+  1. Song, Jieun (691)
+     - 유사도 점수: 90.0
+     - 매칭 타입: name_similar
+     - 매칭 이유: 이름의 순서가 바뀌었고, 한글 이름과 영어 이름이 매칭됩니다. '송지은'과 'Song, Jieun'은 같은 이름입니다.
+  2. Song, Jieun (191)
+     - 유사도 점수: 90.0
+     - 매칭 타입: name_similar
+     - 매칭 이유: 이름의 순서가 바뀌었고, 한글 이름과 영어 이름이 매칭됩니다. '송지은'과 'Song, Jieun'은 같은 이름입니다.
+  3. Jeong, Yeeun (691)
+     - 유사도 점수: 30.0
+     - 매칭 타입: partial
+     - 매칭 이유: 이름의 일부가 유사합니다. '송지은'과 'Jeong, Yeeun'은 일부 글자가 비슷하지만, 다른 이름입니다.
   4. Ju, Hyeyeon (191-Extern-MBK)
      - 유사도 점수: 30.0
      - 매칭 타입: partial
-     - 매칭 이유: 이름의 일부가 'Hyeyeon'로, 'Young-hee'와 부분적으로 유사할 수 있습니다.
-  5. Kim, Ji-Hyun (191)
+     - 매칭 이유: 이름의 일부가 유사합니다. '송지은'과 'Ju, Hyeyeon'은 일부 글자가 비슷하지만, 다른 이름입니다.
+  5. Joo, Jaeyool (191)
      - 유사도 점수: 30.0
      - 매칭 타입: partial
-     - 매칭 이유: 이름의 일부가 'Ji-Hyun'로, 'Young-hee'와 부분적으로 유사할 수 있습니다.
+     - 매칭 이유: 이름의 일부가 유사합니다. '송지은'과 'Joo, Jaeyool'은 일부 글자가 비슷하지만, 다른 이름입니다.
+
+
+🧪 테스트 케이스 10: PRGATE
+   입력: 'Eunha Jeong'
+--------------------------------------------------
+2025-09-12 17:15:31,191 - mcp_tools - INFO - 🔍 데이터베이스에서 unique한 이메일 값들을 조회합니다.
+2025-09-12 17:15:31,191 - kars_db - INFO - 🔍 Unique 값 조회 시작: field=from_email, limit=50000
+2025-09-12 17:15:31,263 - kars_db - INFO - ✅ Unique 값 조회 완료: from_email 필드에서 3개 unique 값 발견
+2025-09-12 17:15:31,263 - kars_db - INFO - 🔍 Unique 값 조회 시작: field=to_email, limit=50000
+2025-09-12 17:15:31,334 - kars_db - INFO - ✅ Unique 값 조회 완료: to_email 필드에서 1개 unique 값 발견
+2025-09-12 17:15:31,335 - kars_db - INFO - 🔍 Unique 값 조회 시작: field=custodian, limit=50000
+2025-09-12 17:15:31,396 - kars_db - INFO - ✅ Unique 값 조회 완료: custodian 필드에서 1개 unique 값 발견
+2025-09-12 17:15:31,396 - kars_db - INFO - 🔍 Unique 값 조회 시작: field=last_author, limit=50000
+2025-09-12 17:15:31,474 - kars_db - INFO - ✅ Unique 값 조회 완료: last_author 필드에서 14개 unique 값 발견
+2025-09-12 17:15:31,474 - mcp_tools - INFO - ✅ Unique 이름들 조회 완료: from_email 3개, to_email 1개, custodian 1, total_last_author:  14
+2025-09-12 17:15:38,912 - httpx - INFO - HTTP Request: POST http://10.10.190.1:8124/v1/chat/completions "HTTP/1.1 200 OK"
+2025-09-12 17:15:38,913 - mcp_tools - INFO - ✅ 이메일 유사도 매칭 완료: 'Eunha Jeong' → 5개 매치
+✅ 매칭 성공!
+  - 총 후보 수: 17개
+  - 매치 결과: 5개
+  - 검색 필드 타입: all
+
+🎯 매치 결과:
+  1. Jeong, Yeeun (191) on behalf of korea_com (191-NPM)
+     - 유사도 점수: 90.0
+     - 매칭 타입: name_similar
+     - 매칭 이유: 이름의 순서가 바뀐 경우 (예: '조효원' ↔ '효원 조')
+  2. Jeong, Yeeun (691)
+     - 유사도 점수: 90.0
+     - 매칭 타입: name_similar
+     - 매칭 이유: 이름의 순서가 바뀐 경우 (예: '조효원' ↔ '효원 조')
+  3. Song, Jieun (691)
+     - 유사도 점수: 30.0
+     - 매칭 타입: partial
+     - 매칭 이유: 이름의 일부가 일치하거나 유사
+  4. Song, Jieun (191)
+     - 유사도 점수: 30.0
+     - 매칭 타입: partial
+     - 매칭 이유: 이름의 일부가 일치하거나 유사
+  5. Shim, Ellen (191)
+     - 유사도 점수: 5.0
+     - 매칭 타입: related
+     - 매칭 이유: 업무적, 조직적 관련성이 있는 경우
+
+
+🧪 테스트 케이스 11: Eunha Jeong의 한국어 이름
+   입력: '정은하'
+--------------------------------------------------
+2025-09-12 17:15:38,914 - mcp_tools - INFO - 🔍 데이터베이스에서 unique한 이메일 값들을 조회합니다.
+2025-09-12 17:15:38,914 - kars_db - INFO - 🔍 Unique 값 조회 시작: field=from_email, limit=50000
+2025-09-12 17:15:38,988 - kars_db - INFO - ✅ Unique 값 조회 완료: from_email 필드에서 3개 unique 값 발견
+2025-09-12 17:15:38,988 - kars_db - INFO - 🔍 Unique 값 조회 시작: field=to_email, limit=50000
+2025-09-12 17:15:39,061 - kars_db - INFO - ✅ Unique 값 조회 완료: to_email 필드에서 1개 unique 값 발견
+2025-09-12 17:15:39,061 - kars_db - INFO - 🔍 Unique 값 조회 시작: field=custodian, limit=50000
+2025-09-12 17:15:39,137 - kars_db - INFO - ✅ Unique 값 조회 완료: custodian 필드에서 1개 unique 값 발견
+2025-09-12 17:15:39,138 - kars_db - INFO - 🔍 Unique 값 조회 시작: field=last_author, limit=50000
+2025-09-12 17:15:39,222 - kars_db - INFO - ✅ Unique 값 조회 완료: last_author 필드에서 14개 unique 값 발견
+2025-09-12 17:15:39,222 - mcp_tools - INFO - ✅ Unique 이름들 조회 완료: from_email 3개, to_email 1개, custodian 1, total_last_author:  14
+2025-09-12 17:15:46,844 - httpx - INFO - HTTP Request: POST http://10.10.190.1:8124/v1/chat/completions "HTTP/1.1 200 OK"
+2025-09-12 17:15:46,846 - mcp_tools - INFO - ✅ 이메일 유사도 매칭 완료: '정은하' → 5개 매치
+✅ 매칭 성공!
+  - 총 후보 수: 17개
+  - 매치 결과: 5개
+  - 검색 필드 타입: all
+
+🎯 매치 결과:
+  1. Jeong, Yeeun (191) on behalf of korea_com (191-NPM)
+     - 유사도 점수: 90.0
+     - 매칭 타입: name_similar
+     - 매칭 이유: 이름의 순서가 바뀐 경우 (예: '정은하' ↔ 'Jeong, Yeeun')
+  2. Jeong, Yeeun (691)
+     - 유사도 점수: 90.0
+     - 매칭 타입: name_similar
+     - 매칭 이유: 이름의 순서가 바뀐 경우 (예: '정은하' ↔ 'Jeong, Yeeun')
+  3. Song, Jieun (191)
+     - 유사도 점수: 30.0
+     - 매칭 타입: partial
+     - 매칭 이유: 이름의 일부가 일치하거나 유사
+  4. Song, Jieun (691)
+     - 유사도 점수: 30.0
+     - 매칭 타입: partial
+     - 매칭 이유: 이름의 일부가 일치하거나 유사
+  5. Shim, Ellen (191)
+     - 유사도 점수: 30.0
+     - 매칭 타입: partial
+     - 매칭 이유: 이름의 일부가 일치하거나 유사
 
 ✅ 이름 매칭 테스트 완료!
-/raid1/workspace/kars-agent/weaviate-mcp/tmp_sungwon_chae/test_extract_value_tool_modified.py:321: ResourceWarning: unclosed <socket.socket fd=10, family=2, type=1, proto=6, laddr=('10.10.150.195', 38572), raddr=('10.10.150.195', 8080)>
+
+🔍 3단계: 키워드 유사도 매칭 테스트 (MBG 실제 키워드 기반)
+------------------------------------------------------------
+
+🧪 키워드 테스트 케이스 1: 배터리 관련 - EQC 모델
+   입력: 'EQC'
+--------------------------------------------------
+2025-09-12 17:15:46,846 - mcp_tools - INFO - 🔍 데이터베이스에서 unique한 이메일 값들을 조회합니다.
+2025-09-12 17:15:46,846 - kars_db - INFO - 🔍 Unique 값 조회 시작: field=from_email, limit=50000
+2025-09-12 17:15:46,923 - kars_db - INFO - ✅ Unique 값 조회 완료: from_email 필드에서 3개 unique 값 발견
+2025-09-12 17:15:46,923 - kars_db - INFO - 🔍 Unique 값 조회 시작: field=to_email, limit=50000
+2025-09-12 17:15:46,995 - kars_db - INFO - ✅ Unique 값 조회 완료: to_email 필드에서 1개 unique 값 발견
+2025-09-12 17:15:46,995 - kars_db - INFO - 🔍 Unique 값 조회 시작: field=custodian, limit=50000
+2025-09-12 17:15:47,059 - kars_db - INFO - ✅ Unique 값 조회 완료: custodian 필드에서 1개 unique 값 발견
+2025-09-12 17:15:47,060 - kars_db - INFO - 🔍 Unique 값 조회 시작: field=last_author, limit=50000
+2025-09-12 17:15:47,132 - kars_db - INFO - ✅ Unique 값 조회 완료: last_author 필드에서 14개 unique 값 발견
+2025-09-12 17:15:47,132 - mcp_tools - INFO - ✅ Unique 이름들 조회 완료: from_email 3개, to_email 1개, custodian 1, total_last_author:  14
+2025-09-12 17:15:55,661 - httpx - INFO - HTTP Request: POST http://10.10.190.1:8124/v1/chat/completions "HTTP/1.1 200 OK"
+2025-09-12 17:15:55,663 - mcp_tools - INFO - ✅ 이메일 유사도 매칭 완료: 'EQC' → 5개 매치
+✅ 매칭 성공!
+  - 총 후보 수: 17개
+  - 매치 결과: 5개
+  - 검색 필드 타입: all
+
+🎯 매치 결과:
+  1. Microsoft® Word Microsoft 365용
+     - 유사도 점수: 0
+     - 매칭 타입: none
+     - 매칭 이유: 이름 또는 이메일 주소에서 'EQC'와 관련된 유사성이 없습니다.
+  2. 䵩捲潳潦璮⁗潲搠㈰ㄶ㬠浯摩晩敤⁵獩湧⁩呥硴卨慲瀮䱇偌瘲⹃潲攠ㄮ㘮ㄮ
+     - 유사도 점수: 0
+     - 매칭 타입: none
+     - 매칭 이유: 이름 또는 이메일 주소에서 'EQC'와 관련된 유사성이 없습니다.
+  3. Microsoft® Word 2016
+     - 유사도 점수: 0
+     - 매칭 타입: none
+     - 매칭 이유: 이름 또는 이메일 주소에서 'EQC'와 관련된 유사성이 없습니다.
+  4. Park, Jaekyung (191)
+     - 유사도 점수: 0
+     - 매칭 타입: none
+     - 매칭 이유: 이름 또는 이메일 주소에서 'EQC'와 관련된 유사성이 없습니다.
+  5. Kim, Ji-Hyun (191)
+     - 유사도 점수: 0
+     - 매칭 타입: none
+     - 매칭 이유: 이름 또는 이메일 주소에서 'EQC'와 관련된 유사성이 없습니다.
+
+
+🧪 키워드 테스트 케이스 2: 배터리 관련 - EQE 모델
+   입력: 'EQE'
+--------------------------------------------------
+2025-09-12 17:15:55,663 - mcp_tools - INFO - 🔍 데이터베이스에서 unique한 이메일 값들을 조회합니다.
+2025-09-12 17:15:55,663 - kars_db - INFO - 🔍 Unique 값 조회 시작: field=from_email, limit=50000
+2025-09-12 17:15:55,741 - kars_db - INFO - ✅ Unique 값 조회 완료: from_email 필드에서 3개 unique 값 발견
+2025-09-12 17:15:55,742 - kars_db - INFO - 🔍 Unique 값 조회 시작: field=to_email, limit=50000
+2025-09-12 17:15:55,813 - kars_db - INFO - ✅ Unique 값 조회 완료: to_email 필드에서 1개 unique 값 발견
+2025-09-12 17:15:55,813 - kars_db - INFO - 🔍 Unique 값 조회 시작: field=custodian, limit=50000
+2025-09-12 17:15:55,884 - kars_db - INFO - ✅ Unique 값 조회 완료: custodian 필드에서 1개 unique 값 발견
+2025-09-12 17:15:55,884 - kars_db - INFO - 🔍 Unique 값 조회 시작: field=last_author, limit=50000
+2025-09-12 17:15:55,954 - kars_db - INFO - ✅ Unique 값 조회 완료: last_author 필드에서 14개 unique 값 발견
+2025-09-12 17:15:55,954 - mcp_tools - INFO - ✅ Unique 이름들 조회 완료: from_email 3개, to_email 1개, custodian 1, total_last_author:  14
+2025-09-12 17:16:03,846 - httpx - INFO - HTTP Request: POST http://10.10.190.1:8124/v1/chat/completions "HTTP/1.1 200 OK"
+2025-09-12 17:16:03,848 - mcp_tools - INFO - ✅ 이메일 유사도 매칭 완료: 'EQE' → 5개 매치
+✅ 매칭 성공!
+  - 총 후보 수: 17개
+  - 매치 결과: 5개
+  - 검색 필드 타입: all
+
+🎯 매치 결과:
+  1. NaN
+     - 유사도 점수: 0
+     - 매칭 타입: partial
+     - 매칭 이유: 입력된 쿼리 'EQE'와 관련된 정보가 없습니다.
+  2. Microsoft® Word for Microsoft 365
+     - 유사도 점수: 0
+     - 매칭 타입: partial
+     - 매칭 이유: 입력된 쿼리 'EQE'와 관련된 정보가 없습니다.
+  3. Microsoft® Word Microsoft 365용
+     - 유사도 점수: 0
+     - 매칭 타입: partial
+     - 매칭 이유: 입력된 쿼리 'EQE'와 관련된 정보가 없습니다.
+  4. Microsoft® Word 2016
+     - 유사도 점수: 0
+     - 매칭 타입: partial
+     - 매칭 이유: 입력된 쿼리 'EQE'와 관련된 정보가 없습니다.
+  5. 䵩捲潳潦璮⁗潲搠㈰ㄶ㬠浯摩晩敤⁵獩湧⁩呥硴卨慲瀮䱇偌瘲⹃潲攠ㄮ㘮ㄮ
+     - 유사도 점수: 0
+     - 매칭 타입: partial
+     - 매칭 이유: 입력된 쿼리 'EQE'와 관련된 정보가 없습니다.
+
+
+🧪 키워드 테스트 케이스 3: 배터리 관련 - EQS 모델
+   입력: 'EQS'
+--------------------------------------------------
+2025-09-12 17:16:03,848 - mcp_tools - INFO - 🔍 데이터베이스에서 unique한 이메일 값들을 조회합니다.
+2025-09-12 17:16:03,848 - kars_db - INFO - 🔍 Unique 값 조회 시작: field=from_email, limit=50000
+2025-09-12 17:16:03,922 - kars_db - INFO - ✅ Unique 값 조회 완료: from_email 필드에서 3개 unique 값 발견
+2025-09-12 17:16:03,922 - kars_db - INFO - 🔍 Unique 값 조회 시작: field=to_email, limit=50000
+2025-09-12 17:16:03,994 - kars_db - INFO - ✅ Unique 값 조회 완료: to_email 필드에서 1개 unique 값 발견
+2025-09-12 17:16:03,994 - kars_db - INFO - 🔍 Unique 값 조회 시작: field=custodian, limit=50000
+2025-09-12 17:16:04,069 - kars_db - INFO - ✅ Unique 값 조회 완료: custodian 필드에서 1개 unique 값 발견
+2025-09-12 17:16:04,069 - kars_db - INFO - 🔍 Unique 값 조회 시작: field=last_author, limit=50000
+2025-09-12 17:16:04,142 - kars_db - INFO - ✅ Unique 값 조회 완료: last_author 필드에서 14개 unique 값 발견
+2025-09-12 17:16:04,143 - mcp_tools - INFO - ✅ Unique 이름들 조회 완료: from_email 3개, to_email 1개, custodian 1, total_last_author:  14
+2025-09-12 17:16:13,045 - httpx - INFO - HTTP Request: POST http://10.10.190.1:8124/v1/chat/completions "HTTP/1.1 200 OK"
+2025-09-12 17:16:13,046 - mcp_tools - INFO - ✅ 이메일 유사도 매칭 완료: 'EQS' → 5개 매치
+✅ 매칭 성공!
+  - 총 후보 수: 17개
+  - 매치 결과: 5개
+  - 검색 필드 타입: all
+
+🎯 매치 결과:
+  1. Microsoft® Word Microsoft 365용
+     - 유사도 점수: 0.0
+     - 매칭 타입: none
+     - 매칭 이유: 이름 또는 이메일 주소에서 'EQS'와 관련된 유사성이 없음
+  2. 䵩捲潳潦璮⁗潲搠㈰ㄶ㬠浯摩晩敤⁵獩湧⁩呥硴卨慲瀮䱇偌瘲⹃潲攠ㄮ㘮ㄮ
+     - 유사도 점수: 0.0
+     - 매칭 타입: none
+     - 매칭 이유: 이름 또는 이메일 주소에서 'EQS'와 관련된 유사성이 없음
+  3. Microsoft® Word 2016
+     - 유사도 점수: 0.0
+     - 매칭 타입: none
+     - 매칭 이유: 이름 또는 이메일 주소에서 'EQS'와 관련된 유사성이 없음
+  4. Park, Jaekyung (191)
+     - 유사도 점수: 0.0
+     - 매칭 타입: none
+     - 매칭 이유: 이름 또는 이메일 주소에서 'EQS'와 관련된 유사성이 없음
+  5. Kim, Ji-Hyun (191)
+     - 유사도 점수: 0.0
+     - 매칭 타입: none
+     - 매칭 이유: 이름 또는 이메일 주소에서 'EQS'와 관련된 유사성이 없음
+
+
+🧪 키워드 테스트 케이스 4: 배터리 관련 - 전기차
+   입력: '전기차'
+--------------------------------------------------
+2025-09-12 17:16:13,047 - mcp_tools - INFO - 🔍 데이터베이스에서 unique한 이메일 값들을 조회합니다.
+2025-09-12 17:16:13,047 - kars_db - INFO - 🔍 Unique 값 조회 시작: field=from_email, limit=50000
+2025-09-12 17:16:13,122 - kars_db - INFO - ✅ Unique 값 조회 완료: from_email 필드에서 3개 unique 값 발견
+2025-09-12 17:16:13,123 - kars_db - INFO - 🔍 Unique 값 조회 시작: field=to_email, limit=50000
+2025-09-12 17:16:13,195 - kars_db - INFO - ✅ Unique 값 조회 완료: to_email 필드에서 1개 unique 값 발견
+2025-09-12 17:16:13,195 - kars_db - INFO - 🔍 Unique 값 조회 시작: field=custodian, limit=50000
+2025-09-12 17:16:13,269 - kars_db - INFO - ✅ Unique 값 조회 완료: custodian 필드에서 1개 unique 값 발견
+2025-09-12 17:16:13,269 - kars_db - INFO - 🔍 Unique 값 조회 시작: field=last_author, limit=50000
+2025-09-12 17:16:13,316 - kars_db - INFO - ✅ Unique 값 조회 완료: last_author 필드에서 14개 unique 값 발견
+2025-09-12 17:16:13,316 - mcp_tools - INFO - ✅ Unique 이름들 조회 완료: from_email 3개, to_email 1개, custodian 1, total_last_author:  14
+2025-09-12 17:16:13,594 - httpx - INFO - HTTP Request: POST http://10.10.190.1:8124/v1/chat/completions "HTTP/1.1 200 OK"
+2025-09-12 17:16:13,595 - mcp_tools - INFO - ✅ 이메일 유사도 매칭 완료: '전기차' → 0개 매치
+✅ 매칭 성공!
+  - 총 후보 수: 17개
+  - 매치 결과: 0개
+  - 검색 필드 타입: all
+  📭 매치 결과가 없습니다.
+
+
+🧪 키워드 테스트 케이스 5: 배터리 관련 - 배터리
+   입력: '배터리'
+--------------------------------------------------
+2025-09-12 17:16:13,596 - mcp_tools - INFO - 🔍 데이터베이스에서 unique한 이메일 값들을 조회합니다.
+2025-09-12 17:16:13,596 - kars_db - INFO - 🔍 Unique 값 조회 시작: field=from_email, limit=50000
+2025-09-12 17:16:13,654 - kars_db - INFO - ✅ Unique 값 조회 완료: from_email 필드에서 3개 unique 값 발견
+2025-09-12 17:16:13,654 - kars_db - INFO - 🔍 Unique 값 조회 시작: field=to_email, limit=50000
+2025-09-12 17:16:13,725 - kars_db - INFO - ✅ Unique 값 조회 완료: to_email 필드에서 1개 unique 값 발견
+2025-09-12 17:16:13,726 - kars_db - INFO - 🔍 Unique 값 조회 시작: field=custodian, limit=50000
+2025-09-12 17:16:13,772 - kars_db - INFO - ✅ Unique 값 조회 완료: custodian 필드에서 1개 unique 값 발견
+2025-09-12 17:16:13,772 - kars_db - INFO - 🔍 Unique 값 조회 시작: field=last_author, limit=50000
+2025-09-12 17:16:13,845 - kars_db - INFO - ✅ Unique 값 조회 완료: last_author 필드에서 14개 unique 값 발견
+2025-09-12 17:16:13,846 - mcp_tools - INFO - ✅ Unique 이름들 조회 완료: from_email 3개, to_email 1개, custodian 1, total_last_author:  14
+2025-09-12 17:16:14,124 - httpx - INFO - HTTP Request: POST http://10.10.190.1:8124/v1/chat/completions "HTTP/1.1 200 OK"
+2025-09-12 17:16:14,126 - mcp_tools - INFO - ✅ 이메일 유사도 매칭 완료: '배터리' → 0개 매치
+✅ 매칭 성공!
+  - 총 후보 수: 17개
+  - 매치 결과: 0개
+  - 검색 필드 타입: all
+  📭 매치 결과가 없습니다.
+
+
+🧪 키워드 테스트 케이스 6: 기술 - MBUX 시스템
+   입력: 'MBUX'
+--------------------------------------------------
+2025-09-12 17:16:14,126 - mcp_tools - INFO - 🔍 데이터베이스에서 unique한 이메일 값들을 조회합니다.
+2025-09-12 17:16:14,126 - kars_db - INFO - 🔍 Unique 값 조회 시작: field=from_email, limit=50000
+2025-09-12 17:16:14,221 - kars_db - INFO - ✅ Unique 값 조회 완료: from_email 필드에서 3개 unique 값 발견
+2025-09-12 17:16:14,221 - kars_db - INFO - 🔍 Unique 값 조회 시작: field=to_email, limit=50000
+2025-09-12 17:16:14,291 - kars_db - INFO - ✅ Unique 값 조회 완료: to_email 필드에서 1개 unique 값 발견
+2025-09-12 17:16:14,292 - kars_db - INFO - 🔍 Unique 값 조회 시작: field=custodian, limit=50000
+2025-09-12 17:16:14,363 - kars_db - INFO - ✅ Unique 값 조회 완료: custodian 필드에서 1개 unique 값 발견
+2025-09-12 17:16:14,363 - kars_db - INFO - 🔍 Unique 값 조회 시작: field=last_author, limit=50000
+2025-09-12 17:16:14,434 - kars_db - INFO - ✅ Unique 값 조회 완료: last_author 필드에서 14개 unique 값 발견
+2025-09-12 17:16:14,434 - mcp_tools - INFO - ✅ Unique 이름들 조회 완료: from_email 3개, to_email 1개, custodian 1, total_last_author:  14
+2025-09-12 17:16:22,188 - httpx - INFO - HTTP Request: POST http://10.10.190.1:8124/v1/chat/completions "HTTP/1.1 200 OK"
+2025-09-12 17:16:22,189 - mcp_tools - INFO - ✅ 이메일 유사도 매칭 완료: 'MBUX' → 5개 매치
+✅ 매칭 성공!
+  - 총 후보 수: 17개
+  - 매치 결과: 5개
+  - 검색 필드 타입: all
+
+🎯 매치 결과:
+  1. Microsoft® Word Microsoft 365용
+     - 유사도 점수: 0.0
+     - 매칭 타입: none
+     - 매칭 이유: 이름이 아예 다르며, 관련성이 없음
+  2. 䵩捲潳潦璮⁗潲搠㈰ㄶ㬠浯摩晩敤⁵獩湧⁩呥硴卨慲瀮䱇偌瘲⹃潲攠ㄮ㘮ㄮ
+     - 유사도 점수: 0.0
+     - 매칭 타입: none
+     - 매칭 이유: 이름이 아예 다르며, 관련성이 없음
+  3. Microsoft® Word 2016
+     - 유사도 점수: 0.0
+     - 매칭 타입: none
+     - 매칭 이유: 이름이 아예 다르며, 관련성이 없음
+  4. Park, Jaekyung (191)
+     - 유사도 점수: 0.0
+     - 매칭 타입: none
+     - 매칭 이유: 이름이 아예 다르며, 관련성이 없음
+  5. Kim, Ji-Hyun (191)
+     - 유사도 점수: 0.0
+     - 매칭 타입: none
+     - 매칭 이유: 이름이 아예 다르며, 관련성이 없음
+
+
+🧪 키워드 테스트 케이스 7: 기술 - 4MATIC 사륜구동
+   입력: '4MATIC'
+--------------------------------------------------
+2025-09-12 17:16:22,190 - mcp_tools - INFO - 🔍 데이터베이스에서 unique한 이메일 값들을 조회합니다.
+2025-09-12 17:16:22,190 - kars_db - INFO - 🔍 Unique 값 조회 시작: field=from_email, limit=50000
+2025-09-12 17:16:22,265 - kars_db - INFO - ✅ Unique 값 조회 완료: from_email 필드에서 3개 unique 값 발견
+2025-09-12 17:16:22,265 - kars_db - INFO - 🔍 Unique 값 조회 시작: field=to_email, limit=50000
+2025-09-12 17:16:22,332 - kars_db - INFO - ✅ Unique 값 조회 완료: to_email 필드에서 1개 unique 값 발견
+2025-09-12 17:16:22,333 - kars_db - INFO - 🔍 Unique 값 조회 시작: field=custodian, limit=50000
+2025-09-12 17:16:22,407 - kars_db - INFO - ✅ Unique 값 조회 완료: custodian 필드에서 1개 unique 값 발견
+2025-09-12 17:16:22,407 - kars_db - INFO - 🔍 Unique 값 조회 시작: field=last_author, limit=50000
+2025-09-12 17:16:22,482 - kars_db - INFO - ✅ Unique 값 조회 완료: last_author 필드에서 14개 unique 값 발견
+2025-09-12 17:16:22,482 - mcp_tools - INFO - ✅ Unique 이름들 조회 완료: from_email 3개, to_email 1개, custodian 1, total_last_author:  14
+2025-09-12 17:16:24,350 - httpx - INFO - HTTP Request: POST http://10.10.190.1:8124/v1/chat/completions "HTTP/1.1 200 OK"
+2025-09-12 17:16:24,351 - mcp_tools - INFO - ✅ 이메일 유사도 매칭 완료: '4MATIC' → 1개 매치
+✅ 매칭 성공!
+  - 총 후보 수: 17개
+  - 매치 결과: 1개
+  - 검색 필드 타입: all
+
+🎯 매치 결과:
+  1. 4MATIC
+     - 유사도 점수: 0.0
+     - 매칭 타입: none
+     - 매칭 이유: None of the provided candidates match the query '4MATIC'. The query appears to be a brand or product name, not a person's name or email address.
+
+
+🧪 키워드 테스트 케이스 8: 기술 - 하이브리드
+   입력: '하이브리드'
+--------------------------------------------------
+2025-09-12 17:16:24,352 - mcp_tools - INFO - 🔍 데이터베이스에서 unique한 이메일 값들을 조회합니다.
+2025-09-12 17:16:24,352 - kars_db - INFO - 🔍 Unique 값 조회 시작: field=from_email, limit=50000
+2025-09-12 17:16:24,424 - kars_db - INFO - ✅ Unique 값 조회 완료: from_email 필드에서 3개 unique 값 발견
+2025-09-12 17:16:24,424 - kars_db - INFO - 🔍 Unique 값 조회 시작: field=to_email, limit=50000
+2025-09-12 17:16:24,481 - kars_db - INFO - ✅ Unique 값 조회 완료: to_email 필드에서 1개 unique 값 발견
+2025-09-12 17:16:24,481 - kars_db - INFO - 🔍 Unique 값 조회 시작: field=custodian, limit=50000
+2025-09-12 17:16:24,548 - kars_db - INFO - ✅ Unique 값 조회 완료: custodian 필드에서 1개 unique 값 발견
+2025-09-12 17:16:24,548 - kars_db - INFO - 🔍 Unique 값 조회 시작: field=last_author, limit=50000
+2025-09-12 17:16:24,610 - kars_db - INFO - ✅ Unique 값 조회 완료: last_author 필드에서 14개 unique 값 발견
+2025-09-12 17:16:24,610 - mcp_tools - INFO - ✅ Unique 이름들 조회 완료: from_email 3개, to_email 1개, custodian 1, total_last_author:  14
+2025-09-12 17:16:33,651 - httpx - INFO - HTTP Request: POST http://10.10.190.1:8124/v1/chat/completions "HTTP/1.1 200 OK"
+2025-09-12 17:16:33,653 - mcp_tools - INFO - ✅ 이메일 유사도 매칭 완료: '하이브리드' → 5개 매치
+✅ 매칭 성공!
+  - 총 후보 수: 17개
+  - 매치 결과: 5개
+  - 검색 필드 타입: all
+
+🎯 매치 결과:
+  1. Microsoft® Word Microsoft 365용
+     - 유사도 점수: 0.0
+     - 매칭 타입: none
+     - 매칭 이유: 이름이 '하이브리드'와 관련이 없으며, 이메일 주소가 아님
+  2. 䵩捲潳潦璮⁗潲搠㈰ㄶ㬠浯摩晩敤⁵獩湧⁩呥硴卨慲瀮䱇偌瘲⹃潲攠ㄮ㘮ㄮ
+     - 유사도 점수: 0.0
+     - 매칭 타입: none
+     - 매칭 이유: 이름이 '하이브리드'와 관련이 없으며, 이메일 주소가 아님
+  3. Microsoft® Word 2016
+     - 유사도 점수: 0.0
+     - 매칭 타입: none
+     - 매칭 이유: 이름이 '하이브리드'와 관련이 없으며, 이메일 주소가 아님
+  4. NaN
+     - 유사도 점수: 0.0
+     - 매칭 타입: none
+     - 매칭 이유: 이름이 '하이브리드'와 관련이 없으며, 이메일 주소가 아님
+  5. Microsoft® Word for Microsoft 365
+     - 유사도 점수: 0.0
+     - 매칭 타입: none
+     - 매칭 이유: 이름이 '하이브리드'와 관련이 없으며, 이메일 주소가 아님
+
+
+🧪 키워드 테스트 케이스 9: 기술 - 전동화
+   입력: '전동화'
+--------------------------------------------------
+2025-09-12 17:16:33,654 - mcp_tools - INFO - 🔍 데이터베이스에서 unique한 이메일 값들을 조회합니다.
+2025-09-12 17:16:33,654 - kars_db - INFO - 🔍 Unique 값 조회 시작: field=from_email, limit=50000
+2025-09-12 17:16:33,724 - kars_db - INFO - ✅ Unique 값 조회 완료: from_email 필드에서 3개 unique 값 발견
+2025-09-12 17:16:33,724 - kars_db - INFO - 🔍 Unique 값 조회 시작: field=to_email, limit=50000
+2025-09-12 17:16:33,790 - kars_db - INFO - ✅ Unique 값 조회 완료: to_email 필드에서 1개 unique 값 발견
+2025-09-12 17:16:33,790 - kars_db - INFO - 🔍 Unique 값 조회 시작: field=custodian, limit=50000
+2025-09-12 17:16:33,864 - kars_db - INFO - ✅ Unique 값 조회 완료: custodian 필드에서 1개 unique 값 발견
+2025-09-12 17:16:33,864 - kars_db - INFO - 🔍 Unique 값 조회 시작: field=last_author, limit=50000
+2025-09-12 17:16:33,926 - kars_db - INFO - ✅ Unique 값 조회 완료: last_author 필드에서 14개 unique 값 발견
+2025-09-12 17:16:33,927 - mcp_tools - INFO - ✅ Unique 이름들 조회 완료: from_email 3개, to_email 1개, custodian 1, total_last_author:  14
+2025-09-12 17:16:39,675 - httpx - INFO - HTTP Request: POST http://10.10.190.1:8124/v1/chat/completions "HTTP/1.1 200 OK"
+2025-09-12 17:16:39,677 - mcp_tools - INFO - ✅ 이메일 유사도 매칭 완료: '전동화' → 5개 매치
+✅ 매칭 성공!
+  - 총 후보 수: 17개
+  - 매치 결과: 5개
+  - 검색 필드 타입: all
+
+🎯 매치 결과:
+  1. 전동화
+     - 유사도 점수: 100.0
+     - 매칭 타입: exact
+     - 매칭 이유: 이름이 완전히 일치합니다.
+  2. 전동화
+     - 유사도 점수: 100.0
+     - 매칭 타입: exact
+     - 매칭 이유: 이름이 완전히 일치합니다.
+  3. 전동화
+     - 유사도 점수: 100.0
+     - 매칭 타입: exact
+     - 매칭 이유: 이름이 완전히 일치합니다.
+  4. 전동화
+     - 유사도 점수: 100.0
+     - 매칭 타입: exact
+     - 매칭 이유: 이름이 완전히 일치합니다.
+  5. 전동화
+     - 유사도 점수: 100.0
+     - 매칭 타입: exact
+     - 매칭 이유: 이름이 완전히 일치합니다.
+
+
+🧪 키워드 테스트 케이스 10: 협력사 - SOCAR
+   입력: 'SOCAR'
+--------------------------------------------------
+2025-09-12 17:16:39,677 - mcp_tools - INFO - 🔍 데이터베이스에서 unique한 이메일 값들을 조회합니다.
+2025-09-12 17:16:39,677 - kars_db - INFO - 🔍 Unique 값 조회 시작: field=from_email, limit=50000
+2025-09-12 17:16:39,751 - kars_db - INFO - ✅ Unique 값 조회 완료: from_email 필드에서 3개 unique 값 발견
+2025-09-12 17:16:39,751 - kars_db - INFO - 🔍 Unique 값 조회 시작: field=to_email, limit=50000
+2025-09-12 17:16:39,823 - kars_db - INFO - ✅ Unique 값 조회 완료: to_email 필드에서 1개 unique 값 발견
+2025-09-12 17:16:39,823 - kars_db - INFO - 🔍 Unique 값 조회 시작: field=custodian, limit=50000
+2025-09-12 17:16:39,884 - kars_db - INFO - ✅ Unique 값 조회 완료: custodian 필드에서 1개 unique 값 발견
+2025-09-12 17:16:39,884 - kars_db - INFO - 🔍 Unique 값 조회 시작: field=last_author, limit=50000
+2025-09-12 17:16:39,954 - kars_db - INFO - ✅ Unique 값 조회 완료: last_author 필드에서 14개 unique 값 발견
+2025-09-12 17:16:39,954 - mcp_tools - INFO - ✅ Unique 이름들 조회 완료: from_email 3개, to_email 1개, custodian 1, total_last_author:  14
+2025-09-12 17:16:44,814 - httpx - INFO - HTTP Request: POST http://10.10.190.1:8124/v1/chat/completions "HTTP/1.1 200 OK"
+2025-09-12 17:16:44,815 - mcp_tools - INFO - ✅ 이메일 유사도 매칭 완료: 'SOCAR' → 5개 매치
+✅ 매칭 성공!
+  - 총 후보 수: 17개
+  - 매치 결과: 5개
+  - 검색 필드 타입: all
+
+🎯 매치 결과:
+  1. SOCAR
+     - 유사도 점수: 100.0
+     - 매칭 타입: exact
+     - 매칭 이유: 정확한 일치
+  2. SOCAR
+     - 유사도 점수: 90.0
+     - 매칭 타입: name_similar
+     - 매칭 이유: 이름 유사
+  3. SOCAR
+     - 유사도 점수: 80.0
+     - 매칭 타입: username
+     - 매칭 이유: 이메일 사용자명 일치
+  4. SOCAR
+     - 유사도 점수: 30.0
+     - 매칭 타입: partial
+     - 매칭 이유: 부분 일치
+  5. SOCAR
+     - 유사도 점수: 5.0
+     - 매칭 타입: related
+     - 매칭 이유: 관련성
+
+
+🧪 키워드 테스트 케이스 11: 협력사 - 몽클레르
+   입력: '몽클레르'
+--------------------------------------------------
+2025-09-12 17:16:44,816 - mcp_tools - INFO - 🔍 데이터베이스에서 unique한 이메일 값들을 조회합니다.
+2025-09-12 17:16:44,816 - kars_db - INFO - 🔍 Unique 값 조회 시작: field=from_email, limit=50000
+2025-09-12 17:16:44,895 - kars_db - INFO - ✅ Unique 값 조회 완료: from_email 필드에서 3개 unique 값 발견
+2025-09-12 17:16:44,895 - kars_db - INFO - 🔍 Unique 값 조회 시작: field=to_email, limit=50000
+2025-09-12 17:16:44,986 - kars_db - INFO - ✅ Unique 값 조회 완료: to_email 필드에서 1개 unique 값 발견
+2025-09-12 17:16:44,987 - kars_db - INFO - 🔍 Unique 값 조회 시작: field=custodian, limit=50000
+2025-09-12 17:16:45,053 - kars_db - INFO - ✅ Unique 값 조회 완료: custodian 필드에서 1개 unique 값 발견
+2025-09-12 17:16:45,053 - kars_db - INFO - 🔍 Unique 값 조회 시작: field=last_author, limit=50000
+2025-09-12 17:16:45,126 - kars_db - INFO - ✅ Unique 값 조회 완료: last_author 필드에서 14개 unique 값 발견
+2025-09-12 17:16:45,126 - mcp_tools - INFO - ✅ Unique 이름들 조회 완료: from_email 3개, to_email 1개, custodian 1, total_last_author:  14
+2025-09-12 17:16:45,405 - httpx - INFO - HTTP Request: POST http://10.10.190.1:8124/v1/chat/completions "HTTP/1.1 200 OK"
+2025-09-12 17:16:45,407 - mcp_tools - INFO - ✅ 이메일 유사도 매칭 완료: '몽클레르' → 0개 매치
+✅ 매칭 성공!
+  - 총 후보 수: 17개
+  - 매치 결과: 0개
+  - 검색 필드 타입: all
+  📭 매치 결과가 없습니다.
+
+
+🧪 키워드 테스트 케이스 12: 협력사 - 버질 아블로
+   입력: '버질 아블로'
+--------------------------------------------------
+2025-09-12 17:16:45,407 - mcp_tools - INFO - 🔍 데이터베이스에서 unique한 이메일 값들을 조회합니다.
+2025-09-12 17:16:45,407 - kars_db - INFO - 🔍 Unique 값 조회 시작: field=from_email, limit=50000
+2025-09-12 17:16:45,480 - kars_db - INFO - ✅ Unique 값 조회 완료: from_email 필드에서 3개 unique 값 발견
+2025-09-12 17:16:45,480 - kars_db - INFO - 🔍 Unique 값 조회 시작: field=to_email, limit=50000
+2025-09-12 17:16:45,552 - kars_db - INFO - ✅ Unique 값 조회 완료: to_email 필드에서 1개 unique 값 발견
+2025-09-12 17:16:45,552 - kars_db - INFO - 🔍 Unique 값 조회 시작: field=custodian, limit=50000
+2025-09-12 17:16:45,613 - kars_db - INFO - ✅ Unique 값 조회 완료: custodian 필드에서 1개 unique 값 발견
+2025-09-12 17:16:45,613 - kars_db - INFO - 🔍 Unique 값 조회 시작: field=last_author, limit=50000
+2025-09-12 17:16:45,684 - kars_db - INFO - ✅ Unique 값 조회 완료: last_author 필드에서 14개 unique 값 발견
+2025-09-12 17:16:45,685 - mcp_tools - INFO - ✅ Unique 이름들 조회 완료: from_email 3개, to_email 1개, custodian 1, total_last_author:  14
+2025-09-12 17:16:52,694 - httpx - INFO - HTTP Request: POST http://10.10.190.1:8124/v1/chat/completions "HTTP/1.1 200 OK"
+2025-09-12 17:16:52,695 - mcp_tools - INFO - ✅ 이메일 유사도 매칭 완료: '버질 아블로' → 5개 매치
+✅ 매칭 성공!
+  - 총 후보 수: 17개
+  - 매치 결과: 5개
+  - 검색 필드 타입: all
+
+🎯 매치 결과:
+  1. NaN
+     - 유사도 점수: 0
+     - 매칭 타입: partial
+     - 매칭 이유: 입력된 이름과 관련된 정보가 없습니다.
+  2. Microsoft® Word Microsoft 365용
+     - 유사도 점수: 0
+     - 매칭 타입: partial
+     - 매칭 이유: 입력된 이름과 관련된 정보가 없습니다.
+  3. Microsoft® Word 2016
+     - 유사도 점수: 0
+     - 매칭 타입: partial
+     - 매칭 이유: 입력된 이름과 관련된 정보가 없습니다.
+  4. Microsoft® Word for Microsoft 365
+     - 유사도 점수: 0
+     - 매칭 타입: partial
+     - 매칭 이유: 입력된 이름과 관련된 정보가 없습니다.
+  5. 䵩捲潳潦璮⁗潲搠㈰ㄶ㬠浯摩晩敤⁵獩湧⁩呥硴卨慲瀮䱇偌瘲⹃潲攠ㄮ㘮ㄮ
+     - 유사도 점수: 0
+     - 매칭 타입: partial
+     - 매칭 이유: 입력된 이름과 관련된 정보가 없습니다.
+
+
+🧪 키워드 테스트 케이스 13: 모델명 - GLB
+   입력: 'GLB'
+--------------------------------------------------
+2025-09-12 17:16:52,696 - mcp_tools - INFO - 🔍 데이터베이스에서 unique한 이메일 값들을 조회합니다.
+2025-09-12 17:16:52,696 - kars_db - INFO - 🔍 Unique 값 조회 시작: field=from_email, limit=50000
+2025-09-12 17:16:52,767 - kars_db - INFO - ✅ Unique 값 조회 완료: from_email 필드에서 3개 unique 값 발견
+2025-09-12 17:16:52,767 - kars_db - INFO - 🔍 Unique 값 조회 시작: field=to_email, limit=50000
+2025-09-12 17:16:52,837 - kars_db - INFO - ✅ Unique 값 조회 완료: to_email 필드에서 1개 unique 값 발견
+2025-09-12 17:16:52,837 - kars_db - INFO - 🔍 Unique 값 조회 시작: field=custodian, limit=50000
+2025-09-12 17:16:52,900 - kars_db - INFO - ✅ Unique 값 조회 완료: custodian 필드에서 1개 unique 값 발견
+2025-09-12 17:16:52,900 - kars_db - INFO - 🔍 Unique 값 조회 시작: field=last_author, limit=50000
+2025-09-12 17:16:52,974 - kars_db - INFO - ✅ Unique 값 조회 완료: last_author 필드에서 14개 unique 값 발견
+2025-09-12 17:16:52,975 - mcp_tools - INFO - ✅ Unique 이름들 조회 완료: from_email 3개, to_email 1개, custodian 1, total_last_author:  14
+2025-09-12 17:17:01,367 - httpx - INFO - HTTP Request: POST http://10.10.190.1:8124/v1/chat/completions "HTTP/1.1 200 OK"
+2025-09-12 17:17:01,369 - mcp_tools - INFO - ✅ 이메일 유사도 매칭 완료: 'GLB' → 5개 매치
+✅ 매칭 성공!
+  - 총 후보 수: 17개
+  - 매치 결과: 5개
+  - 검색 필드 타입: all
+
+🎯 매치 결과:
+  1. Microsoft® Word Microsoft 365용
+     - 유사도 점수: 0.0
+     - 매칭 타입: none
+     - 매칭 이유: 이름 또는 이메일 주소에 GLB와 관련된 정보가 없습니다.
+  2. 䵩捲潳潦璮⁗潲搠㈰ㄶ㬠浯摩晩敤⁵獩湧⁩呥硴卨慲瀮䱇偌瘲⹃潲攠ㄮ㘮ㄮ
+     - 유사도 점수: 0.0
+     - 매칭 타입: none
+     - 매칭 이유: 이름 또는 이메일 주소에 GLB와 관련된 정보가 없습니다.
+  3. Microsoft® Word 2016
+     - 유사도 점수: 0.0
+     - 매칭 타입: none
+     - 매칭 이유: 이름 또는 이메일 주소에 GLB와 관련된 정보가 없습니다.
+  4. Park, Jaekyung (191)
+     - 유사도 점수: 0.0
+     - 매칭 타입: none
+     - 매칭 이유: 이름 또는 이메일 주소에 GLB와 관련된 정보가 없습니다.
+  5. Kim, Ji-Hyun (191)
+     - 유사도 점수: 0.0
+     - 매칭 타입: none
+     - 매칭 이유: 이름 또는 이메일 주소에 GLB와 관련된 정보가 없습니다.
+
+
+🧪 키워드 테스트 케이스 14: 모델명 - GLA
+   입력: 'GLA'
+--------------------------------------------------
+2025-09-12 17:17:01,370 - mcp_tools - INFO - 🔍 데이터베이스에서 unique한 이메일 값들을 조회합니다.
+2025-09-12 17:17:01,370 - kars_db - INFO - 🔍 Unique 값 조회 시작: field=from_email, limit=50000
+2025-09-12 17:17:01,445 - kars_db - INFO - ✅ Unique 값 조회 완료: from_email 필드에서 3개 unique 값 발견
+2025-09-12 17:17:01,445 - kars_db - INFO - 🔍 Unique 값 조회 시작: field=to_email, limit=50000
+2025-09-12 17:17:01,518 - kars_db - INFO - ✅ Unique 값 조회 완료: to_email 필드에서 1개 unique 값 발견
+2025-09-12 17:17:01,518 - kars_db - INFO - 🔍 Unique 값 조회 시작: field=custodian, limit=50000
+2025-09-12 17:17:01,589 - kars_db - INFO - ✅ Unique 값 조회 완료: custodian 필드에서 1개 unique 값 발견
+2025-09-12 17:17:01,589 - kars_db - INFO - 🔍 Unique 값 조회 시작: field=last_author, limit=50000
+2025-09-12 17:17:01,660 - kars_db - INFO - ✅ Unique 값 조회 완료: last_author 필드에서 14개 unique 값 발견
+2025-09-12 17:17:01,660 - mcp_tools - INFO - ✅ Unique 이름들 조회 완료: from_email 3개, to_email 1개, custodian 1, total_last_author:  14
+2025-09-12 17:17:10,053 - httpx - INFO - HTTP Request: POST http://10.10.190.1:8124/v1/chat/completions "HTTP/1.1 200 OK"
+2025-09-12 17:17:10,055 - mcp_tools - INFO - ✅ 이메일 유사도 매칭 완료: 'GLA' → 5개 매치
+✅ 매칭 성공!
+  - 총 후보 수: 17개
+  - 매치 결과: 5개
+  - 검색 필드 타입: all
+
+🎯 매치 결과:
+  1. Microsoft® Word Microsoft 365용
+     - 유사도 점수: 0.0
+     - 매칭 타입: none
+     - 매칭 이유: 이름 또는 이메일 주소에 GLA와 관련된 정보가 없습니다.
+  2. 䵩捲潳潦璮⁗潲搠㈰ㄶ㬠浯摩晩敤⁵獩湧⁩呥硴卨慲瀮䱇偌瘲⹃潲攠ㄮ㘮ㄮ
+     - 유사도 점수: 0.0
+     - 매칭 타입: none
+     - 매칭 이유: 이름 또는 이메일 주소에 GLA와 관련된 정보가 없습니다.
+  3. Microsoft® Word 2016
+     - 유사도 점수: 0.0
+     - 매칭 타입: none
+     - 매칭 이유: 이름 또는 이메일 주소에 GLA와 관련된 정보가 없습니다.
+  4. Park, Jaekyung (191)
+     - 유사도 점수: 0.0
+     - 매칭 타입: none
+     - 매칭 이유: 이름 또는 이메일 주소에 GLA와 관련된 정보가 없습니다.
+  5. Kim, Ji-Hyun (191)
+     - 유사도 점수: 0.0
+     - 매칭 타입: none
+     - 매칭 이유: 이름 또는 이메일 주소에 GLA와 관련된 정보가 없습니다.
+
+
+🧪 키워드 테스트 케이스 15: 모델명 - GLE
+   입력: 'GLE'
+--------------------------------------------------
+2025-09-12 17:17:10,055 - mcp_tools - INFO - 🔍 데이터베이스에서 unique한 이메일 값들을 조회합니다.
+2025-09-12 17:17:10,055 - kars_db - INFO - 🔍 Unique 값 조회 시작: field=from_email, limit=50000
+2025-09-12 17:17:10,115 - kars_db - INFO - ✅ Unique 값 조회 완료: from_email 필드에서 3개 unique 값 발견
+2025-09-12 17:17:10,115 - kars_db - INFO - 🔍 Unique 값 조회 시작: field=to_email, limit=50000
+2025-09-12 17:17:10,186 - kars_db - INFO - ✅ Unique 값 조회 완료: to_email 필드에서 1개 unique 값 발견
+2025-09-12 17:17:10,186 - kars_db - INFO - 🔍 Unique 값 조회 시작: field=custodian, limit=50000
+2025-09-12 17:17:10,259 - kars_db - INFO - ✅ Unique 값 조회 완료: custodian 필드에서 1개 unique 값 발견
+2025-09-12 17:17:10,259 - kars_db - INFO - 🔍 Unique 값 조회 시작: field=last_author, limit=50000
+2025-09-12 17:17:10,337 - kars_db - INFO - ✅ Unique 값 조회 완료: last_author 필드에서 14개 unique 값 발견
+2025-09-12 17:17:10,338 - mcp_tools - INFO - ✅ Unique 이름들 조회 완료: from_email 3개, to_email 1개, custodian 1, total_last_author:  14
+2025-09-12 17:17:18,800 - httpx - INFO - HTTP Request: POST http://10.10.190.1:8124/v1/chat/completions "HTTP/1.1 200 OK"
+2025-09-12 17:17:18,802 - mcp_tools - INFO - ✅ 이메일 유사도 매칭 완료: 'GLE' → 5개 매치
+✅ 매칭 성공!
+  - 총 후보 수: 17개
+  - 매치 결과: 5개
+  - 검색 필드 타입: all
+
+🎯 매치 결과:
+  1. Ju, Hyeyeon (191-Extern-MBK)
+     - 유사도 점수: 30.0
+     - 매칭 타입: partial
+     - 매칭 이유: 이름의 일부 'Hyeyeon'이 쿼리 'GLE'와 부분적으로 유사함
+  2. Jeong, Yeeun (191) on behalf of korea_com (191-NPM)
+     - 유사도 점수: 30.0
+     - 매칭 타입: partial
+     - 매칭 이유: 이름의 일부 'Yeeun'이 쿼리 'GLE'와 부분적으로 유사함
+  3. Jeong, Yeeun (691)
+     - 유사도 점수: 30.0
+     - 매칭 타입: partial
+     - 매칭 이유: 이름의 일부 'Yeeun'이 쿼리 'GLE'와 부분적으로 유사함
+  4. Song, Jieun (191)
+     - 유사도 점수: 30.0
+     - 매칭 타입: partial
+     - 매칭 이유: 이름의 일부 'Jieun'이 쿼리 'GLE'와 부분적으로 유사함
+  5. Song, Jieun (691)
+     - 유사도 점수: 30.0
+     - 매칭 타입: partial
+     - 매칭 이유: 이름의 일부 'Jieun'이 쿼리 'GLE'와 부분적으로 유사함
+
+
+🧪 키워드 테스트 케이스 16: 모델명 - G-Class
+   입력: 'G-Class'
+--------------------------------------------------
+2025-09-12 17:17:18,803 - mcp_tools - INFO - 🔍 데이터베이스에서 unique한 이메일 값들을 조회합니다.
+2025-09-12 17:17:18,803 - kars_db - INFO - 🔍 Unique 값 조회 시작: field=from_email, limit=50000
+2025-09-12 17:17:18,877 - kars_db - INFO - ✅ Unique 값 조회 완료: from_email 필드에서 3개 unique 값 발견
+2025-09-12 17:17:18,877 - kars_db - INFO - 🔍 Unique 값 조회 시작: field=to_email, limit=50000
+2025-09-12 17:17:18,947 - kars_db - INFO - ✅ Unique 값 조회 완료: to_email 필드에서 1개 unique 값 발견
+2025-09-12 17:17:18,947 - kars_db - INFO - 🔍 Unique 값 조회 시작: field=custodian, limit=50000
+2025-09-12 17:17:19,035 - kars_db - INFO - ✅ Unique 값 조회 완료: custodian 필드에서 1개 unique 값 발견
+2025-09-12 17:17:19,035 - kars_db - INFO - 🔍 Unique 값 조회 시작: field=last_author, limit=50000
+2025-09-12 17:17:19,109 - kars_db - INFO - ✅ Unique 값 조회 완료: last_author 필드에서 14개 unique 값 발견
+2025-09-12 17:17:19,110 - mcp_tools - INFO - ✅ Unique 이름들 조회 완료: from_email 3개, to_email 1개, custodian 1, total_last_author:  14
+2025-09-12 17:17:19,388 - httpx - INFO - HTTP Request: POST http://10.10.190.1:8124/v1/chat/completions "HTTP/1.1 200 OK"
+2025-09-12 17:17:19,390 - mcp_tools - INFO - ✅ 이메일 유사도 매칭 완료: 'G-Class' → 0개 매치
+✅ 매칭 성공!
+  - 총 후보 수: 17개
+  - 매치 결과: 0개
+  - 검색 필드 타입: all
+  📭 매치 결과가 없습니다.
+
+
+🧪 키워드 테스트 케이스 17: 모델명 - AMG
+   입력: 'AMG'
+--------------------------------------------------
+2025-09-12 17:17:19,390 - mcp_tools - INFO - 🔍 데이터베이스에서 unique한 이메일 값들을 조회합니다.
+2025-09-12 17:17:19,390 - kars_db - INFO - 🔍 Unique 값 조회 시작: field=from_email, limit=50000
+2025-09-12 17:17:19,464 - kars_db - INFO - ✅ Unique 값 조회 완료: from_email 필드에서 3개 unique 값 발견
+2025-09-12 17:17:19,464 - kars_db - INFO - 🔍 Unique 값 조회 시작: field=to_email, limit=50000
+2025-09-12 17:17:19,534 - kars_db - INFO - ✅ Unique 값 조회 완료: to_email 필드에서 1개 unique 값 발견
+2025-09-12 17:17:19,534 - kars_db - INFO - 🔍 Unique 값 조회 시작: field=custodian, limit=50000
+2025-09-12 17:17:19,595 - kars_db - INFO - ✅ Unique 값 조회 완료: custodian 필드에서 1개 unique 값 발견
+2025-09-12 17:17:19,595 - kars_db - INFO - 🔍 Unique 값 조회 시작: field=last_author, limit=50000
+2025-09-12 17:17:19,666 - kars_db - INFO - ✅ Unique 값 조회 완료: last_author 필드에서 14개 unique 값 발견
+2025-09-12 17:17:19,666 - mcp_tools - INFO - ✅ Unique 이름들 조회 완료: from_email 3개, to_email 1개, custodian 1, total_last_author:  14
+2025-09-12 17:17:28,295 - httpx - INFO - HTTP Request: POST http://10.10.190.1:8124/v1/chat/completions "HTTP/1.1 200 OK"
+2025-09-12 17:17:28,296 - mcp_tools - INFO - ✅ 이메일 유사도 매칭 완료: 'AMG' → 5개 매치
+✅ 매칭 성공!
+  - 총 후보 수: 17개
+  - 매치 결과: 5개
+  - 검색 필드 타입: all
+
+🎯 매치 결과:
+  1. Microsoft® Word Microsoft 365용
+     - 유사도 점수: 0.0
+     - 매칭 타입: none
+     - 매칭 이유: 이름 또는 이메일 주소에서 'AMG'와 관련된 정보가 없습니다.
+  2. 䵩捲潳潦璮⁗潲搠㈰ㄶ㬠浯摩晩敤⁵獩湧⁩呥硴卨慲瀮䱇偌瘲⹃潲攠ㄮ㘮ㄮ
+     - 유사도 점수: 0.0
+     - 매칭 타입: none
+     - 매칭 이유: 이름 또는 이메일 주소에서 'AMG'와 관련된 정보가 없습니다.
+  3. Microsoft® Word 2016
+     - 유사도 점수: 0.0
+     - 매칭 타입: none
+     - 매칭 이유: 이름 또는 이메일 주소에서 'AMG'와 관련된 정보가 없습니다.
+  4. Park, Jaekyung (191)
+     - 유사도 점수: 0.0
+     - 매칭 타입: none
+     - 매칭 이유: 이름 또는 이메일 주소에서 'AMG'와 관련된 정보가 없습니다.
+  5. Kim, Ji-Hyun (191)
+     - 유사도 점수: 0.0
+     - 매칭 타입: none
+     - 매칭 이유: 이름 또는 이메일 주소에서 'AMG'와 관련된 정보가 없습니다.
+
+✅ 키워드 매칭 테스트 완료!
+/raid1/workspace/kars-agent/weaviate-mcp/tmp_sungwon_chae/test_extract_value_tool_modified.py:477: ResourceWarning: unclosed <socket.socket fd=10, family=2, type=1, proto=6, laddr=('10.10.150.195', 50304), raddr=('10.10.150.195', 8080)>
   await test_name_matching()
 ResourceWarning: Enable tracemalloc to get the object allocation traceback
 
