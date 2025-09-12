@@ -28,33 +28,24 @@ async def test_extract_filter():
         api_key="token-abc123"
         client = OpenAI(base_url=base_url, api_key=api_key)
         response = client.chat.completions.create(
-                model="/data/models_ckpt/Qwen3-32B",
-                messages=[
-                    {"role": "user", "content": "hi!"}
-                ]
-            )
+            model="/data/models_ckpt/Qwen3-32B",
+            messages=[{"role": "user", "content": "hi!"}],
+            max_tokens=10
+        )
         print("Test Query Response: ", response)
         print("✅ OpenAI 클라이언트 설정 완료")
-    except ImportError:
-        print("❌ openai 패키지가 설치되지 않았습니다. 'pip install openai'로 설치해주세요.")
-        return
     except Exception as e:
         print(f"❌ OpenAI 클라이언트 설정 실패: {e}")
         return
+
+    print("🔍 extract_filter_from_query 도구 테스트 시작 (MBG 실제 데이터 기반)")
+    print("\n📋 테스트 목적:")
+    print("  1. Filter 자동 추출 검증")
+    print("  2. 벡터DB에서 관련 문서 검색 확인")
+    print("  3. 실제 MBG 데이터 기반 GT 검증")
+    print("  4. 유사도 기반 검색 성능 확인")
     
-    # 테스트 케이스들 (FilterExtractionResult 필드에 맞게 조정)
-    test_queries = [
-        "1900년 1월에 생성된 문서를 찾아주세요",
-        "황재섭이 작성한 문서를 찾아주세요",
-        "보관자가 '세진 김'이고 1900년 1월에 생성된 문서",
-        "조효원과 최민이 주고받은 문서들을 시간 순으로 정리해줘",
-        "김철수가 작성한 보고서를 찾아주세요",
-        "박영희가 참여한 프로젝트 문서",
-        "이민수와 정수진이 협업한 문서들"
-    ]
-    
-    print("🔍 extract_filter_from_query 도구 테스트 시작\n")
-    print("📋 FilterExtractionResult 필드:")
+    print("\n📋 FilterExtractionResult 필드:")
     print("  - custodian: 보관자")
     print("  - ori_file_name: 원본 파일명")
     print("  - s_created_date: 생성일")
@@ -65,7 +56,46 @@ async def test_extract_filter():
     print("  - bcc: 숨은참조자 이름")
     print("  - last_author: 최종 작성자")
     print("  - extension: 파일 확장자\n")
-    
+
+    # 테스트 케이스들 (실제 MBG 데이터 기반)
+    test_queries = [
+        # A. 발신자 필터 테스트
+        "Jeong, Yeeun (191) on behalf of korea_com (191-NPM)가 발신한 메시지를 모두 찾아줘",
+        "Park, Sep (191) on behalf of korea_com (191-NPM)가 발신한 메시지를 모두 찾아줘",
+        
+        # B. 보관자 필터 테스트
+        "세진 김이 보관한 문서들을 모두 찾아줘",
+        
+        # C. 최종 작성자 필터 테스트
+        "Song, Jieun (191)가 최종 작성한 문서들을 모두 찾아줘",
+        "Ju, Hyeyeon (191-Extern-MBK)가 최종 작성한 문서들을 모두 찾아줘",
+        "Kim, Ji-Hyun (191)가 최종 작성한 문서들을 모두 찾아줘",
+        "Joo, Jaeyool (191)가 최종 작성한 문서들을 모두 찾아줘",
+        "Park, Jaekyung (191)가 최종 작성한 문서들을 모두 찾아줘",
+        "Shim, Ellen (191)가 최종 작성한 문서들을 모두 찾아줘",
+        
+        # D. 파일 확장자 필터 테스트
+        "msg 확장자 파일들을 모두 찾아줘",
+        "pdf 확장자 파일들을 모두 찾아줘",
+        "csv 확장자 파일들을 모두 찾아줘",
+        
+        # E. 복합 필터 테스트
+        "세진 김이 보관한 msg 파일들을 모두 찾아줘",
+        "Song, Jieun (191)가 최종 작성한 pdf 파일들을 모두 찾아줘",
+        "Ju, Hyeyeon (191-Extern-MBK)가 최종 작성한 msg 파일들을 모두 찾아줘",
+        
+        # F. RAG 기반 검색 테스트 (키워드 검색)
+        "EQC 전기차 관련 모든 자료",
+        "MBUX 시스템 관련 기술 자료",
+        "4MATIC 사륜구동 시스템 관련 자료",
+        "SOCAR와의 카셰어링 협력 관련 자료",
+        "SOCAR, 몽클레르, 버질 아블로 협력 관련 모든 자료",
+        "전기차 관련 기술 중 MBUX, 4MATIC, 하이브리드 언급된 문서들",
+        "SOCAR와의 카셰어링 서비스 협약 체결 과정",
+        "EQC 모델의 국내 시장 출시 및 홍보 활동",
+        "메르세데스-벤츠의 전동화 전략 및 기술 로드맵",
+    ]
+
     for i, query in enumerate(test_queries, 1):
         print(f"테스트 케이스 {i}: {query}")
         print("-" * 60)
@@ -88,7 +118,6 @@ async def test_extract_filter():
             print(f"🔍 검색 방식: {result['search_type']}")
             print(f"💭 판단 근거: {result['reasoning']}")
 
-    
             # 필터 딕셔너리 생성 (None이 아닌 값만)
             search_filters = {}
             if result["filters"]:
@@ -108,7 +137,7 @@ async def test_extract_filter():
                 print(f"  - 성공 여부: {search_result.get('success', False)}")
                 print(f"  - 총 결과 수: {search_result.get('total_results', 0)}개")
                 print(f"  - 검색 방식: {search_result.get('search_type', 'N/A')}")
-                print(f"  - 사용된 필터: {search_result.get('search_type', 'N/A')}")
+                print(f"  - 사용된 필터: {search_filters}")
                 
                 # 결과 상세 출력
                 if search_result.get('success') and search_result.get('results'):
@@ -116,14 +145,14 @@ async def test_extract_filter():
                     for j, doc in enumerate(search_result['results'], 1):
                         print(f"  {j}. 문서 ID: {doc.get('id', 'N/A')}")
                         properties = doc.get('properties', {})
-                        print(f"     파일명: {properties.get('file_name', 'N/A')}")
+                        print(f"     파일명: {properties.get('ori_file_name', 'N/A')}")
                         print(f"     보관자: {properties.get('custodian', 'N/A')}")
-                        print(f"     생성일: {properties.get('created_date', 'N/A')}")
+                        print(f"     생성일: {properties.get('s_created_date', 'N/A')}")
                         print(f"     발송일: {properties.get('sent_date', 'N/A')}")
                         print(f"     발신자: {properties.get('from_email', 'N/A')}")
                         print(f"     수신자: {properties.get('to_email', 'N/A')}")
-                        print(f"     확장자: {properties.get('file_type', 'N/A')}")
-                        print(f"     내용 미리보기: {properties.get('chunk', 'N/A')[:100] if properties.get('chunk') else 'N/A'}...")
+                        print(f"     확장자: {properties.get('extension', 'N/A')}")
+                        print(f"     내용 미리보기: {properties.get('content', 'N/A')[:200] if properties.get('content') else 'N/A'}...")
                         print(f"     최종 작성자: {properties.get('last_author', 'N/A')}")
                         print()
                 else:
@@ -150,10 +179,9 @@ async def test_extract_filter():
                         print(f"  {j}. 문서 ID: {doc.get('id', 'N/A')}")
                         properties = doc.get('properties', {})
                         print(f"     파일명: {properties.get('ori_file_name', 'N/A')}")
-                        print(f"     내용 미리보기: {properties.get('chunk', 'N/A')[:100] if properties.get('chunk') else 'N/A'}...")
+                        print(f"     내용 미리보기: {properties.get('content', 'N/A')[:200] if properties.get('content') else 'N/A'}...")
                         print()
 
-            
         except Exception as e:
             print(f"❌ 오류 발생: {e}")
         
@@ -214,36 +242,36 @@ async def test_name_matching():
         print("🔍 2단계: 이름 유사도 매칭 테스트")
         print("-" * 60)
         
-        # 테스트 케이스들
+        # 테스트 케이스들 (MBG 실제 데이터 기반)
         test_cases = [
             {
-                "input": "조효원",
-                "description": "한글 이름으로 검색",
+                "input": "Jeong, Yeeun (191)",
+                "description": "MBG 발신자 이름으로 검색",
                 "field_type": "all"
             },
             {
-                "input": "hyowon cho",
-                "description": "영어 이름으로 검색",
+                "input": "Park, Sep (191)",
+                "description": "MBG 발신자 이름으로 검색",
                 "field_type": "all"
             },
             {
-                "input": "효원 조",
-                "description": "이름 순서가 바뀐 경우",
+                "input": "세진 김",
+                "description": "MBG 보관자 이름으로 검색",
                 "field_type": "all"
             },
             {
-                "input": "hyowon cho (KC)",
-                "description": "약어/별칭이 포함된 경우",
+                "input": "Song, Jieun (191)",
+                "description": "MBG 최종 작성자 이름으로 검색",
                 "field_type": "all"
             },
             {
-                "input": "김철수",
-                "description": "일반적인 한글 이름",
+                "input": "Ju, Hyeyeon (191-Extern-MBK)",
+                "description": "MBG 외부 작성자 이름으로 검색",
                 "field_type": "all"
             },
             {
-                "input": "Park Young-hee",
-                "description": "영어 이름 (하이픈 포함)",
+                "input": "Kim, Ji-Hyun (191)",
+                "description": "MBG 작성자 이름으로 검색",
                 "field_type": "all"
             }
         ]
