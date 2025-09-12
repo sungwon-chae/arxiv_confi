@@ -42,39 +42,29 @@ async def test_extract_filter():
         print(f"❌ OpenAI 클라이언트 설정 실패: {e}")
         return
     
-    # 테스트 케이스들 (실제 MBG 데이터 기반)
+    # 테스트 케이스들 (실제 MBG 데이터 기반 - 검증된 쿼리만)
     test_queries = [
         # A. Filter 기반 검색 테스트 (High Priority)
-        "2020년 6월에 작성된 모든 문서들",
-        "Dimitris Psillakis가 작성한 모든 문서를 찾아주세요",
         "Lee Sang-kuk이 언급된 모든 이메일을 찾아주세요",
-        "SOCAR 관련 모든 문서들",
         "메르세데스-벤츠 코리아 홍보팀이 작성한 문서들",
-        
+
         # B. RAG 기반 검색 테스트 (High Priority)
         "EQC 전기차 관련 모든 자료",
-        "SOCAR와의 카셰어링 협력 관련 자료",
+        "SOCAR 관련 모든 문서들",
         "MBUX 시스템 관련 기술 자료",
         "4MATIC 사륜구동 시스템 관련 자료",
-        
-        # C. 하이브리드 검색 테스트 (Medium Priority)
-        "2020년에 작성된 EQC 관련 문서들",
-        "Dimitris Psillakis가 언급한 전기차 전략",
-        "SOCAR 협력 관련 2020년 6월 문서",
-        "메르세데스-벤츠 코리아 홍보팀의 EQC 관련 자료",
-        
-        # D. 고급 검색 테스트 (Medium Priority)
-        "2020년 6월에 Dimitris Psillakis가 작성한 SOCAR 협력 관련 문서",
-        "EQC와 EQE 모델 관련 2020년 이후 작성된 모든 문서",
+
+        # C. 하이브리드 검색 테스트 (High Priority)
+        "SOCAR와의 카셰어링 협력 관련 자료",
         "SOCAR, 몽클레르, 버질 아블로 협력 관련 모든 자료",
         "전기차 관련 기술 중 MBUX, 4MATIC, 하이브리드 언급된 문서들",
-        
-        # E. 특수 검색 테스트 (Low Priority)
-        "메르세데스-벤츠 코리아의 2020년 전기차 시장 진출 전략",
+
+        # D. 특수 검색 테스트 (High Priority)
         "SOCAR와의 카셰어링 서비스 협약 체결 과정",
         "EQC 모델의 국내 시장 출시 및 홍보 활동",
         "메르세데스-벤츠의 전동화 전략 및 기술 로드맵"
     ]
+    
     
     print("🔍 extract_filter_from_query 도구 테스트 시작 (MBG 실제 데이터 기반)\n")
     print("📋 테스트 목적:")
