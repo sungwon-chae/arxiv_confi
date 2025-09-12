@@ -228,40 +228,65 @@ async def test_name_matching():
         
         print("\n" + "=" * 80 + "\n")
         
-        # 2. 이름 유사도 매칭 테스트
-        print("🔍 2단계: 이름 유사도 매칭 테스트")
+        # 2. 이름 유사도 매칭 테스트 (실제 MBG 데이터 기반)
+        print("�� 2단계: 이름 유사도 매칭 테스트 (MBG 실제 인물 기반)")
         print("-" * 60)
         
-        # 테스트 케이스들
+        # 테스트 케이스들 (실제 MBG 데이터의 주요 인물들)
         test_cases = [
             {
-                "input": "조효원",
-                "description": "한글 이름으로 검색",
+                "input": "Dimitris Psillakis",
+                "description": "메르세데스-벤츠 코리아 대표이사",
                 "field_type": "all"
             },
             {
-                "input": "hyowon cho",
-                "description": "영어 이름으로 검색",
+                "input": "Lee Sang-kuk",
+                "description": "메르세데스-벤츠 코리아 영업 부문 부사장",
                 "field_type": "all"
             },
             {
-                "input": "효원 조",
-                "description": "이름 순서가 바뀐 경우",
+                "input": "이상국",
+                "description": "Lee Sang-kuk의 한국어 이름",
                 "field_type": "all"
             },
             {
-                "input": "hyowon cho (KC)",
-                "description": "약어/별칭이 포함된 경우",
+                "input": "Wi Hyun-jong",
+                "description": "SOCAR 부사장",
                 "field_type": "all"
             },
             {
-                "input": "김철수",
-                "description": "일반적인 한글 이름",
+                "input": "위현종",
+                "description": "Wi Hyun-jong의 한국어 이름",
                 "field_type": "all"
             },
             {
-                "input": "Park Young-hee",
-                "description": "영어 이름 (하이픈 포함)",
+                "input": "Yun-ju Hwang",
+                "description": "메르세데스-벤츠 코리아 홍보팀",
+                "field_type": "all"
+            },
+            {
+                "input": "황윤주",
+                "description": "Yun-ju Hwang의 한국어 이름",
+                "field_type": "all"
+            },
+            {
+                "input": "Jieun Song",
+                "description": "메르세데스-벤츠 코리아 홍보팀",
+                "field_type": "all"
+            },
+            {
+                "input": "송지은",
+                "description": "Jieun Song의 한국어 이름",
+                "field_type": "all"
+            },
+            {
+                "input": "Eunha Jeong",
+                "description": "PRGATE",
+                "field_type": "all"
+            },
+            {
+                "input": "정은하",
+                "description": "Eunha Jeong의 한국어 이름",
                 "field_type": "all"
             }
         ]
@@ -303,6 +328,137 @@ async def test_name_matching():
             print()
         
         print("✅ 이름 매칭 테스트 완료!")
+        
+        # 3. 키워드 유사도 매칭 테스트 (실제 MBG 데이터 기반)
+        print("\n🔍 3단계: 키워드 유사도 매칭 테스트 (MBG 실제 키워드 기반)")
+        print("-" * 60)
+        
+        # 키워드 테스트 케이스들 (실제 MBG 데이터의 주요 키워드들)
+        keyword_test_cases = [
+            {
+                "input": "EQC",
+                "description": "배터리 관련 - EQC 모델",
+                "field_type": "all"
+            },
+            {
+                "input": "EQE",
+                "description": "배터리 관련 - EQE 모델",
+                "field_type": "all"
+            },
+            {
+                "input": "EQS",
+                "description": "배터리 관련 - EQS 모델",
+                "field_type": "all"
+            },
+            {
+                "input": "전기차",
+                "description": "배터리 관련 - 전기차",
+                "field_type": "all"
+            },
+            {
+                "input": "배터리",
+                "description": "배터리 관련 - 배터리",
+                "field_type": "all"
+            },
+            {
+                "input": "MBUX",
+                "description": "기술 - MBUX 시스템",
+                "field_type": "all"
+            },
+            {
+                "input": "4MATIC",
+                "description": "기술 - 4MATIC 사륜구동",
+                "field_type": "all"
+            },
+            {
+                "input": "하이브리드",
+                "description": "기술 - 하이브리드",
+                "field_type": "all"
+            },
+            {
+                "input": "전동화",
+                "description": "기술 - 전동화",
+                "field_type": "all"
+            },
+            {
+                "input": "SOCAR",
+                "description": "협력사 - SOCAR",
+                "field_type": "all"
+            },
+            {
+                "input": "몽클레르",
+                "description": "협력사 - 몽클레르",
+                "field_type": "all"
+            },
+            {
+                "input": "버질 아블로",
+                "description": "협력사 - 버질 아블로",
+                "field_type": "all"
+            },
+            {
+                "input": "GLB",
+                "description": "모델명 - GLB",
+                "field_type": "all"
+            },
+            {
+                "input": "GLA",
+                "description": "모델명 - GLA",
+                "field_type": "all"
+            },
+            {
+                "input": "GLE",
+                "description": "모델명 - GLE",
+                "field_type": "all"
+            },
+            {
+                "input": "G-Class",
+                "description": "모델명 - G-Class",
+                "field_type": "all"
+            },
+            {
+                "input": "AMG",
+                "description": "모델명 - AMG",
+                "field_type": "all"
+            }
+        ]
+        
+        for i, test_case in enumerate(keyword_test_cases, 1):
+            print(f"\n🧪 키워드 테스트 케이스 {i}: {test_case['description']}")
+            print(f"   입력: '{test_case['input']}'")
+            print("-" * 50)
+            
+            try:
+                # 키워드 유사도 매칭 실행
+                result = await tools.find_similar_name(
+                    query_input=test_case['input'],
+                    field_type=test_case['field_type'],
+                    limit=5
+                )
+                
+                if result["success"]:
+                    print(f"✅ 매칭 성공!")
+                    print(f"  - 총 후보 수: {result['total_candidates']}개")
+                    print(f"  - 매치 결과: {len(result['matches'])}개")
+                    print(f"  - 검색 필드 타입: {result.get('email_type', 'N/A')}")
+                    
+                    if result['matches']:
+                        print(f"\n🎯 매치 결과:")
+                        for j, match in enumerate(result['matches'], 1):
+                            print(f"  {j}. {match.get('email', match.get('name', 'N/A'))}")
+                            print(f"     - 유사도 점수: {match.get('similarity_score', 'N/A')}")
+                            print(f"     - 매칭 타입: {match.get('match_type', 'N/A')}")
+                            print(f"     - 매칭 이유: {match.get('reasoning', 'N/A')}")
+                    else:
+                        print("  📭 매치 결과가 없습니다.")
+                else:
+                    print(f"❌ 매칭 실패: {result['error']}")
+                    
+            except Exception as e:
+                print(f"❌ 오류 발생: {e}")
+            
+            print()
+        
+        print("✅ 키워드 매칭 테스트 완료!")
         
     except Exception as e:
         print(f"❌ 전체 테스트 중 오류 발생: {e}")
