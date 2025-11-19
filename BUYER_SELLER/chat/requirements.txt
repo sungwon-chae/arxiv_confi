@@ -1,0 +1,9 @@
+fastapi
+uvicorn[standard]
+httpx
+pydantic
+python-dotenv
+streamlit
+langgraph
+langchain-openai
+langchain-core
