@@ -1,0 +1,9 @@
+{
+  "rouge_1": 0.32121212121212117,
+  "rouge_2": 0.14500000000000002,
+  "rouge_l": 0.298989898989899,
+  "accuracy": 0.2,
+  "category_accuracy": 0.2,
+  "total_samples": 5,
+  "excluded_samples": 10
+}

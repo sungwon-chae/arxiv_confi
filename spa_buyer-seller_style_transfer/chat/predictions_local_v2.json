@@ -1,0 +1,191 @@
+{
+  "version": "1.0",
+  "created_at": "2025-11-26T17:35:19.868739",
+  "model": "gpt-4o",
+  "api_type": "openai",
+  "prompt_version": "v2",
+  "temperature": 0.0,
+  "total_samples": 15,
+  "predictions": [
+    {
+      "converted_sentence": "각 당사자의 본 계약상 진술 및 보장은 거래종결일로부터 3년까지 유효하며, 제6.1조 (a)항에 규정된 매도인의 진술 및 보장은 거래종결일 이후에도 그 기간의 제한 없이 유효하게 존속한다. 본 계약에 포함된 확약사항 또는 기타 합의사항은 거래종결일 후에도 3년간 존속하며, 거래종결일 이전에 발생한 확약사항 기타 합의사항의 위반에 따른 책임은 거래종결일부터 3년간 존속한다. 진술 보장 및 확약 위반의 경우, 그 기간 내에 서면으로 통지한 경우에 한하여 상대방에게 손해배상을 청구할 수 있다. \n\n변경 포인트:\n- 매도인의 진술 및 보장은 기간 제한 없이 유효하게 존속하도록 유지.\n- 확약사항의 존속기간을 거래종결일 후 3년으로 연장.\n- 확약사항 위반에 따른 책임도 거래종결일 후 3년간 존속하도록 설정.\n- 매수인에게 유리한 방향으로 조항을 재작성하여 매수인의 보호를 강화.",
+      "score": 4.0,
+      "raw_response": "현재 조항은 매도인에게 유리한 4점에 가까운 조항으로, 매도인의 진술 및 보장이 거래종결일 이후에도 제한 없이 유효하게 존속하는 반면, 다른 확약사항은 거래종결 후에는 존속하지 않는다는 점에서 매수인에게 불리합니다. 매수인 친화적인 조항으로 변경하기 위해서는 매도인의 진술 및 보장에 대한 존속기간을 제한 없이 설정하고, 확약사항의 위반에 대한 책임도 거래종결일 이후 장기간 존속하도록 해야 합니다.",
+      "metadata": {
+        "spa_term": "손해배상(존속기간)",
+        "target_score": 0.0,
+        "model": "gpt-4o",
+        "temperature": 0.0,
+        "structured_output": true,
+        "output_schema": "StyleTransferOutput",
+        "api_type": "openai"
+      }
+    },
+    {
+      "converted_sentence": "[오류: Could not parse response content as the length limit was reached - CompletionUsage(completion_tokens=16384, prompt_tokens=1253, total_tokens=17637, completion_tokens_details=CompletionTokensDetails(accepted_prediction_tokens=0, audio_tokens=0, reasoning_tokens=0, rejected_prediction_tokens=0), prompt_tokens_details=PromptTokensDetails(audio_tokens=0, cached_tokens=0))]",
+      "score": 1.0,
+      "raw_response": "",
+      "metadata": {
+        "error": "Could not parse response content as the length limit was reached - CompletionUsage(completion_tokens=16384, prompt_tokens=1253, total_tokens=17637, completion_tokens_details=CompletionTokensDetails(accepted_prediction_tokens=0, audio_tokens=0, reasoning_tokens=0, rejected_prediction_tokens=0), prompt_tokens_details=PromptTokensDetails(audio_tokens=0, cached_tokens=0))",
+        "spa_term": "손해배상(존속기간)",
+        "target_score": 1.0,
+        "api_type": "openai"
+      }
+    },
+    {
+      "converted_sentence": "각 당사자의 본 계약상 진술 및 보장은 거래종결일로부터 3년까지 유효하나, 근본적 진술보장은 거래종결일 이후에도 그 기간의 제한 없이 유효하게 존속하며, 제6.2조 (l)항(인사 및 노무) 및 (환경, 보건, 안전 등)에 규정된 매도인의 진술 및 보장은 거래종결일로부터 5년까지, 제6.2조 (i)항(조세)에 규정된 매도인의 진술 보장은 해당 부과제척기간 종료일까지 유효하게 존속한다. 단, 거래종결일 이전에 발생한 확약사항 기타 합의사항의 위반에 따른 책임은 거래종결일 이후에도 그 기간의 제한 없이 유효하게 존속함을 명시한다. 또한, 서면으로 통지한 경우에 한하여 상대방에게 손해배상을 청구할 수 있다. \n\n변경 포인트:\n- 일반 진술 및 보장의 유효기간을 3년으로 연장.\n- 근본적 진술보장은 기간 제한 없이 유효하게 존속하도록 변경.\n- 인사 및 노무, 환경, 보건, 안전 관련 진술 보장의 유효기간을 5년으로 연장.\n- 조세 관련 진술 보장은 부과제척기간 종료일까지 유효하게 설정.\n- 서면 통지 시 손해배상 청구 가능성을 명시하여 매수인 보호 강화.",
+      "score": 4.0,
+      "raw_response": "현재 조항은 매도인 친화적인 4점에 가까운 조항으로, 매수인 입장에서는 진술 및 보장의 존속기간이 너무 짧고, 근본적 진술보장에 대한 제한이 없어야 하며, 특정 항목에 대한 보장 기간이 더 길어야 합니다. 매수인 친화적인 조항으로 변경하기 위해서는 진술 및 보장의 존속기간을 연장하고, 근본적 진술보장에 대한 제한을 없애며, 특정 항목에 대한 보장 기간을 소멸시효나 제척기간 종료 시점까지 연장해야 합니다.",
+      "metadata": {
+        "spa_term": "손해배상(존속기간)",
+        "target_score": 2.0,
+        "model": "gpt-4o",
+        "temperature": 0.0,
+        "structured_output": true,
+        "output_schema": "StyleTransferOutput",
+        "api_type": "openai"
+      }
+    },
+    {
+      "converted_sentence": "[오류: Could not parse response content as the length limit was reached - CompletionUsage(completion_tokens=16384, prompt_tokens=1301, total_tokens=17685, completion_tokens_details=CompletionTokensDetails(accepted_prediction_tokens=0, audio_tokens=0, reasoning_tokens=0, rejected_prediction_tokens=0), prompt_tokens_details=PromptTokensDetails(audio_tokens=0, cached_tokens=0))]",
+      "score": 3.0,
+      "raw_response": "",
+      "metadata": {
+        "error": "Could not parse response content as the length limit was reached - CompletionUsage(completion_tokens=16384, prompt_tokens=1301, total_tokens=17685, completion_tokens_details=CompletionTokensDetails(accepted_prediction_tokens=0, audio_tokens=0, reasoning_tokens=0, rejected_prediction_tokens=0), prompt_tokens_details=PromptTokensDetails(audio_tokens=0, cached_tokens=0))",
+        "spa_term": "손해배상(존속기간)",
+        "target_score": 3.0,
+        "api_type": "openai"
+      }
+    },
+    {
+      "converted_sentence": "각 당사자의 본 계약상 진술 및 보장은 거래종결일로부터 1년까지 유효하다. 매도인의 진술 및 보장은 거래종결일 이후에도 그 기간의 제한 없이 유효하게 존속하지 않으며, 본 계약에 포함된 확약사항 위반에 따른 책임은 거래종결일부터 1년간 존속한다. 각 당사자는 그 기간 내에 서면으로 통지한 경우에 한하여 청구할 수 있다. 매수인의 진술 및 보장은 거래종결일로부터 1년간 유효하다. 본 계약에 포함된 확약사항 또는 기타 합의사항은 거래종결일 후에 이행할 것이 규정되어 있지 아니하는 한 거래종결 후에 존속하지 아니한다. 단, 거래종결일 이전에 발생한 확약사항 기타 합의사항의 위반에 따른 책임은 거래종결일부터 1년간 존속함을 원칙으로 한다.\\n\\n변경 포인트:\\n- 매도인의 진술 및 보장의 유효기간을 제한하여 매도인에게 유리하게 조정.\\n- 매수인의 진술 및 보장의 유효기간을 1년으로 단축하여 매도인에게 유리하게 조정.\\n- 확약사항 위반에 대한 책임을 1년으로 제한하여 매도인의 책임을 최소화.\\n- 서면 통지 요건을 명시하여 매도인의 방어권을 강화.\\n- 거래종결 후 이행되지 않는 확약사항은 존속하지 않도록 명시하여 매도인의 책임을 줄임.",
+      "score": 4.0,
+      "raw_response": "현재 조항은 매수인에게 유리한 구조로, 매수인의 진술 및 보장은 3년간 유효하고, 매도인의 진술 및 보장은 영구적으로 유효하게 설정되어 있습니다. 이는 매수인이 매도인에 대해 장기간의 책임을 물을 수 있는 구조로, 매도인에게 불리합니다. 매도인 친화적인 조항으로 변경하기 위해서는 매도인의 진술 및 보장의 유효기간을 제한하고, 매수인의 진술 및 보장에 대한 유효기간을 단축하는 것이 필요합니다.",
+      "metadata": {
+        "spa_term": "손해배상(존속기간)",
+        "target_score": 4.0,
+        "model": "gpt-4o",
+        "temperature": 0.0,
+        "structured_output": true,
+        "output_schema": "StyleTransferOutput",
+        "api_type": "openai"
+      }
+    },
+    {
+      "converted_sentence": "[오류: Could not parse response content as the length limit was reached - CompletionUsage(completion_tokens=16384, prompt_tokens=1407, total_tokens=17791, completion_tokens_details=CompletionTokensDetails(accepted_prediction_tokens=0, audio_tokens=0, reasoning_tokens=0, rejected_prediction_tokens=0), prompt_tokens_details=PromptTokensDetails(audio_tokens=0, cached_tokens=0))]",
+      "score": 0.0,
+      "raw_response": "",
+      "metadata": {
+        "error": "Could not parse response content as the length limit was reached - CompletionUsage(completion_tokens=16384, prompt_tokens=1407, total_tokens=17791, completion_tokens_details=CompletionTokensDetails(accepted_prediction_tokens=0, audio_tokens=0, reasoning_tokens=0, rejected_prediction_tokens=0), prompt_tokens_details=PromptTokensDetails(audio_tokens=0, cached_tokens=0))",
+        "spa_term": "손해배상(손해액)",
+        "target_score": 0.0,
+        "api_type": "openai"
+      }
+    },
+    {
+      "converted_sentence": "[오류: Could not parse response content as the length limit was reached - CompletionUsage(completion_tokens=16384, prompt_tokens=1345, total_tokens=17729, completion_tokens_details=CompletionTokensDetails(accepted_prediction_tokens=0, audio_tokens=0, reasoning_tokens=0, rejected_prediction_tokens=0), prompt_tokens_details=PromptTokensDetails(audio_tokens=0, cached_tokens=0))]",
+      "score": 1.0,
+      "raw_response": "",
+      "metadata": {
+        "error": "Could not parse response content as the length limit was reached - CompletionUsage(completion_tokens=16384, prompt_tokens=1345, total_tokens=17729, completion_tokens_details=CompletionTokensDetails(accepted_prediction_tokens=0, audio_tokens=0, reasoning_tokens=0, rejected_prediction_tokens=0), prompt_tokens_details=PromptTokensDetails(audio_tokens=0, cached_tokens=0))",
+        "spa_term": "손해배상(손해액)",
+        "target_score": 1.0,
+        "api_type": "openai"
+      }
+    },
+    {
+      "converted_sentence": "검토 대상: 개별 항목별 상대방의 손해액이 금 오백만(5,000,000)원 미만인 경우에는 본 계약상 손해액 산정의 대상에서 제외되나, 개별 항목별 손해액이 이 금액 이상인 경우 전체 손해액에 대해 손해배상을 청구할 수 있다. 구주 매매거래 및 신주 인수거래 모두 손해배상액의 총액은 본건 매매대금 또는 신주의 인수가액 총액의 50%를 초과할 수 없다. 또한, EBITDA 배수를 포함한 통상손해 및 예견가능한 특별손해까지 배상 범위에 포함된다. R&W 보험이 유일한 구제수단이 아닌 경우에도 본 조항은 적용된다. \n\n변경 포인트:\n- De minimis 기준을 1,000만 원에서 500만 원으로 낮춤.\n- 손해배상 한도를 매매대금의 20%에서 50%로 상향 조정.\n- 손해배상 범위에 EBITDA 배수 및 예견가능한 특별손해 포함.\n- R&W 보험이 유일한 구제수단이 아닌 경우에도 조항 적용 명시.",
+      "score": 4.0,
+      "raw_response": "현재 조항은 매도인 친화적인 4점에 가까운 조항으로, 매수인에게 불리한 De minimis 기준과 손해배상 한도(Cap)를 설정하고 있습니다. 매수인 친화적인 0점에 가까운 조항으로 변환하기 위해서는 De minimis 기준을 낮추고, 손해배상 한도를 높이며, 손해배상 범위를 확대하는 방향으로 수정이 필요합니다.",
+      "metadata": {
+        "spa_term": "손해배상(손해액)",
+        "target_score": 2.0,
+        "model": "gpt-4o",
+        "temperature": 0.0,
+        "structured_output": true,
+        "output_schema": "StyleTransferOutput",
+        "api_type": "openai"
+      }
+    },
+    {
+      "converted_sentence": "[오류: Could not parse response content as the length limit was reached - CompletionUsage(completion_tokens=16384, prompt_tokens=1455, total_tokens=17839, completion_tokens_details=CompletionTokensDetails(accepted_prediction_tokens=0, audio_tokens=0, reasoning_tokens=0, rejected_prediction_tokens=0), prompt_tokens_details=PromptTokensDetails(audio_tokens=0, cached_tokens=0))]",
+      "score": 3.0,
+      "raw_response": "",
+      "metadata": {
+        "error": "Could not parse response content as the length limit was reached - CompletionUsage(completion_tokens=16384, prompt_tokens=1455, total_tokens=17839, completion_tokens_details=CompletionTokensDetails(accepted_prediction_tokens=0, audio_tokens=0, reasoning_tokens=0, rejected_prediction_tokens=0), prompt_tokens_details=PromptTokensDetails(audio_tokens=0, cached_tokens=0))",
+        "spa_term": "손해배상(손해액)",
+        "target_score": 3.0,
+        "api_type": "openai"
+      }
+    },
+    {
+      "converted_sentence": "[오류: Could not parse response content as the length limit was reached - CompletionUsage(completion_tokens=16384, prompt_tokens=1455, total_tokens=17839, completion_tokens_details=CompletionTokensDetails(accepted_prediction_tokens=0, audio_tokens=0, reasoning_tokens=0, rejected_prediction_tokens=0), prompt_tokens_details=PromptTokensDetails(audio_tokens=0, cached_tokens=0))]",
+      "score": 4.0,
+      "raw_response": "",
+      "metadata": {
+        "error": "Could not parse response content as the length limit was reached - CompletionUsage(completion_tokens=16384, prompt_tokens=1455, total_tokens=17839, completion_tokens_details=CompletionTokensDetails(accepted_prediction_tokens=0, audio_tokens=0, reasoning_tokens=0, rejected_prediction_tokens=0), prompt_tokens_details=PromptTokensDetails(audio_tokens=0, cached_tokens=0))",
+        "spa_term": "손해배상(손해액)",
+        "target_score": 4.0,
+        "api_type": "openai"
+      }
+    },
+    {
+      "converted_sentence": "매도인은 매수인이 본 계약 체결일 또는 거래종결일까지 알고 있었던 사항에 대해서도 손해배상의무를 부담한다. 본 조에 따라 손해배상을 받을 권리는 유일하고 배타적인 구제수단을 구성하며, 피배상당사자는 본 계약에서 규정된 것 이외의 방법으로 여하한 민사상, 형사상의 책임을 물을 수 있다. 또한 피배상당사자가 제3자로부터 보험금 등의 이익을 제공받는 경우, 그 액수만큼 손해배상액은 감액되지 않는다.",
+      "score": 4.0,
+      "raw_response": "현재 조항은 매도인 친화적(4점)으로, 매수인이 이미 알고 있었던 사항에 대해 매도인이 손해배상 책임을 지지 않도록 규정하고 있습니다. 이는 매수인의 권리를 제한하는 Anti-Sandbagging 조항으로, 매수인 입장에서는 불리합니다. 매수인 친화적(0점)으로 전환하기 위해서는 매수인이 알고 있었던 사항에 대해서도 손해배상을 받을 수 있도록 하고, 매도인의 고의나 기망, 은폐행위에 대한 책임을 명확히 해야 합니다.",
+      "metadata": {
+        "spa_term": "손해배상(예외)",
+        "target_score": 0.0,
+        "model": "gpt-4o",
+        "temperature": 0.0,
+        "structured_output": true,
+        "output_schema": "StyleTransferOutput",
+        "api_type": "openai"
+      }
+    },
+    {
+      "converted_sentence": "[오류: Could not parse response content as the length limit was reached - CompletionUsage(completion_tokens=16384, prompt_tokens=1423, total_tokens=17807, completion_tokens_details=CompletionTokensDetails(accepted_prediction_tokens=0, audio_tokens=0, reasoning_tokens=0, rejected_prediction_tokens=0), prompt_tokens_details=PromptTokensDetails(audio_tokens=0, cached_tokens=0))]",
+      "score": 1.0,
+      "raw_response": "",
+      "metadata": {
+        "error": "Could not parse response content as the length limit was reached - CompletionUsage(completion_tokens=16384, prompt_tokens=1423, total_tokens=17807, completion_tokens_details=CompletionTokensDetails(accepted_prediction_tokens=0, audio_tokens=0, reasoning_tokens=0, rejected_prediction_tokens=0), prompt_tokens_details=PromptTokensDetails(audio_tokens=0, cached_tokens=0))",
+        "spa_term": "손해배상(예외)",
+        "target_score": 1.0,
+        "api_type": "openai"
+      }
+    },
+    {
+      "converted_sentence": "[오류: Could not parse response content as the length limit was reached - CompletionUsage(completion_tokens=16384, prompt_tokens=1448, total_tokens=17832, completion_tokens_details=CompletionTokensDetails(accepted_prediction_tokens=0, audio_tokens=0, reasoning_tokens=0, rejected_prediction_tokens=0), prompt_tokens_details=PromptTokensDetails(audio_tokens=0, cached_tokens=0))]",
+      "score": 2.0,
+      "raw_response": "",
+      "metadata": {
+        "error": "Could not parse response content as the length limit was reached - CompletionUsage(completion_tokens=16384, prompt_tokens=1448, total_tokens=17832, completion_tokens_details=CompletionTokensDetails(accepted_prediction_tokens=0, audio_tokens=0, reasoning_tokens=0, rejected_prediction_tokens=0), prompt_tokens_details=PromptTokensDetails(audio_tokens=0, cached_tokens=0))",
+        "spa_term": "손해배상(예외)",
+        "target_score": 2.0,
+        "api_type": "openai"
+      }
+    },
+    {
+      "converted_sentence": "[오류: Could not parse response content as the length limit was reached - CompletionUsage(completion_tokens=16384, prompt_tokens=1474, total_tokens=17858, completion_tokens_details=CompletionTokensDetails(accepted_prediction_tokens=0, audio_tokens=0, reasoning_tokens=0, rejected_prediction_tokens=0), prompt_tokens_details=PromptTokensDetails(audio_tokens=0, cached_tokens=1024))]",
+      "score": 3.0,
+      "raw_response": "",
+      "metadata": {
+        "error": "Could not parse response content as the length limit was reached - CompletionUsage(completion_tokens=16384, prompt_tokens=1474, total_tokens=17858, completion_tokens_details=CompletionTokensDetails(accepted_prediction_tokens=0, audio_tokens=0, reasoning_tokens=0, rejected_prediction_tokens=0), prompt_tokens_details=PromptTokensDetails(audio_tokens=0, cached_tokens=1024))",
+        "spa_term": "손해배상(예외)",
+        "target_score": 3.0,
+        "api_type": "openai"
+      }
+    },
+    {
+      "converted_sentence": "[오류: Could not parse response content as the length limit was reached - CompletionUsage(completion_tokens=16384, prompt_tokens=1474, total_tokens=17858, completion_tokens_details=CompletionTokensDetails(accepted_prediction_tokens=0, audio_tokens=0, reasoning_tokens=0, rejected_prediction_tokens=0), prompt_tokens_details=PromptTokensDetails(audio_tokens=0, cached_tokens=1024))]",
+      "score": 4.0,
+      "raw_response": "",
+      "metadata": {
+        "error": "Could not parse response content as the length limit was reached - CompletionUsage(completion_tokens=16384, prompt_tokens=1474, total_tokens=17858, completion_tokens_details=CompletionTokensDetails(accepted_prediction_tokens=0, audio_tokens=0, reasoning_tokens=0, rejected_prediction_tokens=0), prompt_tokens_details=PromptTokensDetails(audio_tokens=0, cached_tokens=1024))",
+        "spa_term": "손해배상(예외)",
+        "target_score": 4.0,
+        "api_type": "openai"
+      }
+    }
+  ]
+}
