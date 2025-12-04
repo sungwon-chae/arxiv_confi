@@ -1,0 +1,21 @@
+### ROUGE 점수 비교
+
+| 조합 | ROUGE-1 | ROUGE-2 | ROUGE-L | 평균 |
+|------|---------|---------|---------|------|
+| Utils v1, Context v1 | 0.2640 | 0.1569 | 0.2562 | 0.2257 |
+| Utils v1, Context v2 | **0.3406** | **0.1875** | **0.3317** | **0.2866** |
+| Utils v2, Context v1 | 0.2662 | 0.1673 | 0.2573 | 0.2303 |
+| Utils v2, Context v2 | 0.2161 | 0.1579 | 0.2073 | 0.1938 |
+
+**최고 성능:** Utils v1, Context v2 (모든 ROUGE 지표에서 1위)
+
+### 점수 예측 정확도 비교
+
+| 조합 | Accuracy | Category Accuracy |
+|------|----------|-------------------|
+| Utils v1, Context v1 | 66.67% | 66.67% |
+| Utils v1, Context v2 | 66.67% | 73.33% |
+| Utils v2, Context v1 | 66.67% | 73.33% |
+| Utils v2, Context v2 | 66.67% | **80.00%** |
+
+**최고 성능:** Utils v2, Context v2 (Category Accuracy 80%)
